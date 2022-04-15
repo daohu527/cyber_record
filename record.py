@@ -21,7 +21,7 @@ import io
 import os.path
 
 
-from reader import Reader
+from cyber_record.reader import Reader
 
 
 DEFAULT_CHUNK_SIZE = 200 * 1024 * 1024
