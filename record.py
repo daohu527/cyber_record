@@ -255,7 +255,7 @@ class Record(object):
 
 
 if __name__ == '__main__':
-  file_name = "20210521122747.record.00000"
+  file_name = "../20210521122747.record.00000"
   record = Record(file_name)
   for topic, message, t in record.read_messages():
     print("{}, {}, {}".format(topic, message, t))

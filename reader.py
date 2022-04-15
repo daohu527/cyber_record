@@ -16,8 +16,9 @@
 
 
 from google.protobuf import message_factory, descriptor_pb2, descriptor_pool
-from cyber.proto import record_pb2, proto_desc_pb2
 
+
+from cyber.proto import record_pb2, proto_desc_pb2
 from format.chunk import Chunk
 
 
@@ -51,7 +52,7 @@ class Reader:
     header = self.read_header()
     self.bag._size = header.size
     self.bag._message_number = header.message_number
-    print(header)
+    # print(header)
 
     indexs = self.read_indexs(header)
     for single_index in indexs.indexes:
@@ -65,7 +66,7 @@ class Reader:
       else:
         print("Unknown Index type!")
 
-    print(indexs)
+    # print(indexs)
 
     self._create_message_type_pool()
 
@@ -76,22 +77,20 @@ class Reader:
     pass
 
   def read_messages(self, topics, start_time, end_time):
-    if self.message_index <= self.bag._message_number:
+    while self.message_index < self.bag._message_number:
       if self.chunk.end():
         self.read_next_chunk()
 
       single_message = self.chunk.next_message()
       proto_message = self.create_message(single_message)
       self.message_index += 1
-      return single_message.channel_name, proto_message, single_message.time
-    else:
-      return None, None, None
+      yield single_message.channel_name, proto_message, single_message.time
 
   def _read_section(self, section):
     section.type = int.from_bytes(self.bag._file.read(4), byteorder='little')
     self.bag._file.seek(4, 1)
     section.size = int.from_bytes(self.bag._file.read(8), byteorder='little')
-    print(section)
+    # print(section)
 
   def read_header(self):
     self.bag._file_header_pos = self.bag._file.seek(0, 0)
@@ -165,8 +164,11 @@ class Reader:
         proto_chunk_body = record_pb2.ChunkBody()
         proto_chunk_body.ParseFromString(data)
         self.chunk.swap(proto_chunk_body)
+        return True
       else:
-        self.bag._file.seek(section.size, 0)
+        self.bag._file.seek(section.size, 1)
+    else:
+      return False
 
 
   def read_records(self):
@@ -215,12 +217,10 @@ class Reader:
 
   def create_message(self, single_message):
     message_type = self.message_type_pool.get(single_message.channel_name, None)
-    print(message_type)
 
     if message_type is None:
       return None
     proto_message = message_type()
     proto_message.ParseFromString(single_message.content)
 
-    print(proto_message)
     return proto_message
