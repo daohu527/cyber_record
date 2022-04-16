@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="cyber_record",
-    version="0.0.3",
+    version="0.0.4",
     author="daohu527",
     author_email="daohu527@gmail.com",
     description="Cyber record offline parse tool",
@@ -17,10 +17,13 @@ setuptools.setup(
     },
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: Apache License",
+        "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     package_dir={"": "."},
     packages=setuptools.find_packages(where="."),
+    install_requires=[
+        'protobuf',
+    ],
     python_requires=">=3.6",
 )
