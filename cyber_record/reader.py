@@ -199,9 +199,9 @@ class Reader:
 
     file_desc_proto = descriptor_pb2.FileDescriptorProto()
     file_desc_proto.ParseFromString(proto_desc.desc)
-    self.desc_pool.Add(file_desc_proto)
     for dependency in proto_desc.dependencies:
       self.add_dependency(dependency)
+    self.desc_pool.Add(file_desc_proto)
 
 
   def _create_message_type_pool(self):
