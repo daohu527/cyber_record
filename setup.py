@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="cyber_record",
-    version="0.0.1",
+    version="0.0.2",
     author="daohu527",
     author_email="daohu527@gmail.com",
     description="Cyber record offline parse tool",
@@ -20,7 +20,7 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    package_dir={"": "cyber_record"},
-    packages=setuptools.find_packages(where="cyber_record"),
+    package_dir={"": "."},
+    packages=setuptools.find_packages(where="."),
     python_requires=">=3.6",
 )

@@ -1,12 +1,28 @@
 # cyber_record
-cyber_record offline parse tool. With cyber_record you can read and write messages from the record file.
+Cyber record file offline parse tool. You can use `cyber_record` to read messages from record file, or write messages to the record file.
 
+## Quick start
+First install "cyber_record" by the following command.
+```
+pip install cyber_record
+// or update version
+pip install cyber_record -U
+```
 
-## read record
-You can directly read the record file in the following way.
-
+Then you can reference `cyber_record` by
 ```python
 from cyber_record.record import Record
+```
+
+
+## Examples
+Below are some examples to help you read and write messages from record files.
+
+#### Read messages
+You can read messages directly from the record file in the following ways.
+```python
+from cyber_record.record import Record
+
 
 file_name = "20210521122747.record.00000"
 record = Record(file_name)

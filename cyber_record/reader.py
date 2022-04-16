@@ -19,7 +19,7 @@ from google.protobuf import message_factory, descriptor_pb2, descriptor_pool
 
 
 from cyber_record.cyber.proto import record_pb2, proto_desc_pb2
-from cyber_record.format.chunk import Chunk
+from cyber_record.file_object.chunk import Chunk
 
 
 SECTION_LENGTH = 16
