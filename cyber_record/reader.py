@@ -56,6 +56,10 @@ class Reader:
     self.bag._start_time = header.begin_time
     self.bag._end_time = header.end_time
 
+  def _sort_chunk_header(self):
+    self.chunk_header_indexs.sort(key = \
+      lambda index:index.chunk_header_cache.begin_time)
+
   def start_reading(self):
     header = self.read_header()
     self._fill_header(header)
@@ -73,6 +77,7 @@ class Reader:
       else:
         print("Unknown Index type!")
 
+    self._sort_chunk_header()
     # print(indexs)
 
     self._create_message_type_pool()
@@ -88,16 +93,27 @@ class Reader:
 
     return topic in set(topics)
 
-  def read_messages(self, topics, start_time, end_time):
-    while self.message_index < self.bag._message_number:
-      if self.chunk.end():
-        self._read_next_chunk()
+  def _chunk_header_indexs(self, start_time, end_time):
+    for chunk_header_index in self.chunk_header_indexs:
+      if chunk_header_index.chunk_header_cache.end_time < start_time or \
+         chunk_header_index.chunk_header_cache.start_time > end_time:
+        continue
 
-      single_message = self.chunk.next_message()
-      if self._is_valid_topic(single_message.channel_name, topics):
-        proto_message = self._create_message(single_message)
-        yield single_message.channel_name, proto_message, single_message.time
-      self.message_index += 1
+      yield chunk_header_index
+
+  def read_messages(self, topics, start_time, end_time):
+    for chunk_header_index in self._chunk_header_indexs(start_time, end_time):
+      self._set_position(chunk_header_index.position)
+      self._skip_record()
+      position = self._cur_position()
+      proto_chunk_body = self.read_chunk_body(position)
+      self.chunk.swap(proto_chunk_body)
+
+      while not self.chunk.end():
+        single_message = self.chunk.next_message()
+        if self._is_valid_topic(single_message.channel_name, topics):
+          proto_message = self._create_message(single_message)
+          yield single_message.channel_name, proto_message, single_message.time
 
   def read_header(self):
     self._set_position(0)
@@ -131,11 +147,23 @@ class Reader:
     proto_index.ParseFromString(data)
     return proto_index
 
-  def read_chunk_header(self):
-    pass
+  def read_chunk_header(self, position):
+    self._set_position(position)
 
-  def read_chunk_body(self, chunk_body_index):
-    self._set_position(chunk_body_index.position)
+    section = Section()
+    self._read_section(section)
+
+    if section.type != record_pb2.SECTION_CHUNK_HEADER:
+      return None
+
+    chunk_header = record_pb2.ChunkHeader()
+    data = self._read(section.size)
+
+    chunk_header.ParseFromString(data)
+    return chunk_header
+
+  def read_chunk_body(self, position):
+    self._set_position(position)
 
     section = Section()
     self._read_section(section)
@@ -210,5 +238,13 @@ class Reader:
   def _set_position(self, position):
     self.bag._file.seek(position)
 
+  def _cur_position(self):
+    return self.bag._file.tell()
+
   def _skip_size(self, data_size):
     self.bag._file.seek(data_size, 1)
+
+  def _skip_record(self):
+    section = Section()
+    self._read_section(section)
+    self._skip_size(section.size)
