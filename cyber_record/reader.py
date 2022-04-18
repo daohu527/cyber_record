@@ -93,6 +93,9 @@ class Reader:
 
     return topic in set(topics)
 
+  def _is_valid_time(self, cur_time, start_time, end_time):
+    return cur_time >= start_time and cur_time <= end_time
+
   def _chunk_header_indexs(self, start_time, end_time):
     for chunk_header_index in self.chunk_header_indexs:
       if start_time and \
@@ -115,7 +118,8 @@ class Reader:
 
       while not self.chunk.end():
         single_message = self.chunk.next_message()
-        if self._is_valid_topic(single_message.channel_name, topics):
+        if self._is_valid_topic(single_message.channel_name, topics) and \
+           self._is_valid_time(single_message.time, start_time, end_time):
           proto_message = self._create_message(single_message)
           yield single_message.channel_name, proto_message, single_message.time
 
