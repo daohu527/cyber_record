@@ -95,8 +95,12 @@ class Reader:
 
   def _chunk_header_indexs(self, start_time, end_time):
     for chunk_header_index in self.chunk_header_indexs:
-      if chunk_header_index.chunk_header_cache.end_time < start_time or \
-         chunk_header_index.chunk_header_cache.start_time > end_time:
+      if start_time and \
+          chunk_header_index.chunk_header_cache.end_time < start_time:
+        continue
+
+      if end_time and \
+          chunk_header_index.chunk_header_cache.start_time > end_time:
         continue
 
       yield chunk_header_index
