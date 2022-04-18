@@ -94,7 +94,11 @@ class Reader:
     return topic in set(topics)
 
   def _is_valid_time(self, cur_time, start_time, end_time):
-    return cur_time >= start_time and cur_time <= end_time
+    if start_time and cur_time < start_time:
+      return False
+    if end_time and cur_time > end_time:
+      return False
+    return True
 
   def _chunk_header_indexs(self, start_time, end_time):
     for chunk_header_index in self.chunk_header_indexs:
@@ -103,7 +107,7 @@ class Reader:
         continue
 
       if end_time and \
-          chunk_header_index.chunk_header_cache.start_time > end_time:
+          chunk_header_index.chunk_header_cache.begin_time > end_time:
         continue
 
       yield chunk_header_index
