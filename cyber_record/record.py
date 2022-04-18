@@ -76,7 +76,7 @@ class Record(object):
     self._start_time = 0
     self._end_time   = 0
 
-    allowed_compressions = set(item.value for item in Compression)
+    allowed_compressions = set(item for item in Compression)
     if compression not in allowed_compressions:
       raise ValueError('compression must be one of: {}'.format(allowed_compressions))
     self._compression = compression

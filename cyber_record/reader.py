@@ -82,15 +82,22 @@ class Reader:
   def reindex(self):
     pass
 
+  def _is_valid_topic(self, topic, topics):
+    if topics is None:
+      return True
+
+    return topic in set(topics)
+
   def read_messages(self, topics, start_time, end_time):
     while self.message_index < self.bag._message_number:
       if self.chunk.end():
         self._read_next_chunk()
 
       single_message = self.chunk.next_message()
-      proto_message = self._create_message(single_message)
+      if self._is_valid_topic(single_message.channel_name, topics):
+        proto_message = self._create_message(single_message)
+        yield single_message.channel_name, proto_message, single_message.time
       self.message_index += 1
-      yield single_message.channel_name, proto_message, single_message.time
 
   def read_header(self):
     self._set_position(0)
