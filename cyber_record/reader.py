@@ -20,6 +20,7 @@ from google.protobuf import message_factory, descriptor_pb2, descriptor_pool
 
 from cyber_record.cyber.proto import record_pb2, proto_desc_pb2
 from cyber_record.file_object.chunk import Chunk
+from cyber_record.record_exception import RecordException
 
 
 SECTION_LENGTH = 16
@@ -47,15 +48,21 @@ class Reader:
     self.chunk = Chunk()
     self.message_index = 0
 
+  def _fill_header(self, header):
+    self.bag._version = "{}.{}".format(header.major_version, \
+        header.minor_version)
+    self.bag._size = header.size
+    self.bag._message_number = header.message_number
+    self.bag._start_time = header.begin_time
+    self.bag._end_time = header.end_time
 
   def start_reading(self):
     header = self.read_header()
-    self.bag._size = header.size
-    self.bag._message_number = header.message_number
+    self._fill_header(header)
     # print(header)
 
-    indexs = self.read_indexs(header)
-    for single_index in indexs.indexes:
+    index = self.read_index(header)
+    for single_index in index.indexes:
       if single_index.type == record_pb2.SECTION_CHUNK_HEADER:
         self.chunk_header_indexs.append(single_index)
       elif single_index.type == record_pb2.SECTION_CHUNK_BODY:
@@ -70,8 +77,7 @@ class Reader:
 
     self._create_message_type_pool()
 
-    self.bag._file.seek(HEADER_LENGTH + SECTION_LENGTH, 0)
-
+    self._set_position(HEADER_LENGTH + SECTION_LENGTH)
 
   def reindex(self):
     pass
@@ -79,21 +85,15 @@ class Reader:
   def read_messages(self, topics, start_time, end_time):
     while self.message_index < self.bag._message_number:
       if self.chunk.end():
-        self.read_next_chunk()
+        self._read_next_chunk()
 
       single_message = self.chunk.next_message()
-      proto_message = self.create_message(single_message)
+      proto_message = self._create_message(single_message)
       self.message_index += 1
       yield single_message.channel_name, proto_message, single_message.time
 
-  def _read_section(self, section):
-    section.type = int.from_bytes(self.bag._file.read(4), byteorder='little')
-    self.bag._file.seek(4, 1)
-    section.size = int.from_bytes(self.bag._file.read(8), byteorder='little')
-    # print(section)
-
   def read_header(self):
-    self.bag._file_header_pos = self.bag._file.seek(0, 0)
+    self._set_position(0)
 
     section = Section()
     self._read_section(section)
@@ -102,19 +102,15 @@ class Reader:
       return None
 
     proto_header = record_pb2.Header()
-    data = self.bag._file.read(section.size)
-    if len(data) != section.size:
-      print("Header is incomplete, \
-          actual size: {}, required size: {}".format(len(data), section.size))
-      return None
+    data = self._read(section.size)
 
     proto_header.ParseFromString(data)
-    self.bag._file.seek(HEADER_LENGTH + SECTION_LENGTH, 0)
+
+    self._set_position(HEADER_LENGTH + SECTION_LENGTH)
     return proto_header
 
-
-  def read_indexs(self, header):
-    self.bag._file.seek(header.index_position, 0)
+  def read_index(self, header):
+    self._set_position(header.index_position)
 
     section = Section()
     self._read_section(section)
@@ -122,18 +118,18 @@ class Reader:
     if section.type != record_pb2.SECTION_INDEX:
       return None
 
-    proto_indexs = record_pb2.Index()
-    data = self.bag._file.read(section.size)
-    if len(data) != section.size:
-      print("Index is incomplete, \
-          actual size: {}, required size: {}".format(len(data), section.size))
-      return None
+    proto_index = record_pb2.Index()
+    data = self._read(section.size)
 
-    proto_indexs.ParseFromString(data)
-    return proto_indexs
+    proto_index.ParseFromString(data)
+    return proto_index
+
+  def read_chunk_header(self):
+    pass
 
   def read_chunk_body(self, chunk_body_index):
-    self.bag._file.seek(chunk_body_index.position, 0)
+    self._set_position(chunk_body_index.position)
+
     section = Section()
     self._read_section(section)
 
@@ -141,81 +137,54 @@ class Reader:
       return None
 
     chunk_body = record_pb2.ChunkBody()
-    data = self.bag._file.read(section.size)
-    if len(data) != section.size:
-      print("ChunkBody is incomplete, \
-          actual size: {}, required size: {}".format(len(data), section.size))
-      return None
+    data = self._read(section.size)
 
     chunk_body.ParseFromString(data)
     return chunk_body
 
+  def _read_section(self, section):
+    section.type = int.from_bytes(self._read(4), byteorder='little')
+    self._skip_size(4)
+    section.size = int.from_bytes(self._read(8), byteorder='little')
+    # print(section)
 
-  def read_chunk_header(self):
-    pass
-
-  def read_next_chunk(self):
+  def _read_next_chunk(self):
     while self.bag._file.tell() != self.bag._size:
       section = Section()
       self._read_section(section)
 
       if section.type == record_pb2.SECTION_CHUNK_BODY:
-        data = self.bag._file.read(section.size)
+        data = self._read(section.size)
         proto_chunk_body = record_pb2.ChunkBody()
         proto_chunk_body.ParseFromString(data)
         self.chunk.swap(proto_chunk_body)
         return True
       else:
-        self.bag._file.seek(section.size, 1)
+        self._skip_size(section.size)
     else:
       return False
 
-
-  def read_records(self):
-    self.bag._file.seek(HEADER_LENGTH + SECTION_LENGTH, 0)
-
-    while self.bag._file.tell() != self.bag._size:
-      section = Section()
-      self._read_section(section)
-      data = self.bag._file.read(section.size)
-
-      if section.type == record_pb2.SECTION_CHUNK_HEADER:
-        proto_chunk_header = record_pb2.ChunkHeader()
-        proto_chunk_header.ParseFromString(data)
-      elif section.type == record_pb2.SECTION_INDEX:
-        proto_indexs = record_pb2.Index()
-        proto_indexs.ParseFromString(data)
-      elif section.type == record_pb2.SECTION_CHUNK_BODY:
-        proto_chunk_body = record_pb2.ChunkBody()
-        proto_chunk_body.ParseFromString(data)
-        for message in proto_chunk_body.messages:
-          self.create_message(message)
-      else:
-        pass
-
-  def add_dependency(self, proto_desc):
+  def _add_dependency(self, proto_desc):
     if proto_desc is None:
       return
 
     file_desc_proto = descriptor_pb2.FileDescriptorProto()
     file_desc_proto.ParseFromString(proto_desc.desc)
     for dependency in proto_desc.dependencies:
-      self.add_dependency(dependency)
+      self._add_dependency(dependency)
     self.desc_pool.Add(file_desc_proto)
-
 
   def _create_message_type_pool(self):
     for channel_name, channel_cache in self.channels.items():
       proto_desc = proto_desc_pb2.ProtoDesc()
       proto_desc.ParseFromString(channel_cache.proto_desc)
-      self.add_dependency(proto_desc)
+      self._add_dependency(proto_desc)
 
       descriptor = self.desc_pool.FindMessageTypeByName(channel_cache.message_type)
       message_type = message_factory.MessageFactory().GetPrototype(descriptor)
       self.message_type_pool.update({channel_name: message_type})
 
-
-  def create_message(self, single_message):
+  def _create_message(self, single_message):
     message_type = self.message_type_pool.get(single_message.channel_name, None)
 
     if message_type is None:
@@ -224,3 +193,15 @@ class Reader:
     proto_message.ParseFromString(single_message.content)
 
     return proto_message
+
+  def _read(self, size):
+    data = self.bag._file.read(size)
+    if len(data) != size:
+      raise RecordException('expecting {} bytes, read {}'.format(size, len(data)))
+    return data
+
+  def _set_position(self, position):
+    self.bag._file.seek(position)
+
+  def _skip_size(self, data_size):
+    self.bag._file.seek(data_size, 1)

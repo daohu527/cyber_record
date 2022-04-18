@@ -19,6 +19,7 @@ from enum import Enum
 import struct
 import io
 import os.path
+import time
 
 
 from cyber_record.reader import Reader
@@ -34,12 +35,28 @@ class Compression(Enum):
 
 
 class Record(object):
-  '''
-  The record file
-  '''
+  """
+  Serialize messages to and from a single file on disk using record format.
+  """
   def __init__(self, f, mode='r', compression=Compression.NONE, \
       chunk_threshold=DEFAULT_CHUNK_SIZE, allow_unindexed=False, \
       options=None):
+    """
+    Open a bag file.  The mode can be 'r', 'w', or 'a' for reading (default),
+    writing or appending.  The file will be created if it doesn't exist
+    when opened for writing or appending; it will be truncated when opened
+    for writing.  Simultaneous reading and writing is allowed when in writing
+    or appending mode.
+
+    Args:
+        f (_type_): _description_
+        mode (str, optional): _description_. Defaults to 'r'.
+        compression (_type_, optional): _description_. Defaults to Compression.NONE.
+        allow_unindexed (bool, optional): _description_. Defaults to False.
+
+    Raises:
+        ValueError: _description_
+    """
     # options
     if options is not None:
       if not isinstance(options, dict):
@@ -49,12 +66,19 @@ class Record(object):
       if 'chunk_threshold' in options:
         chunk_threshold = options['chunk_threshold']
 
-    self._file = None
+    self._file     = None
     self._filename = None
-    self._version = None
-    self._size = 0
+    self._version  = None
+
+    self._size           = 0
     self._message_number = 0
 
+    self._start_time = 0
+    self._end_time   = 0
+
+    allowed_compressions = set(item.value for item in Compression)
+    if compression not in allowed_compressions:
+      raise ValueError('compression must be one of: {}'.format(allowed_compressions))
     self._compression = compression
 
     assert chunk_threshold >= MIN_CHUNK_SIZE, \
@@ -62,6 +86,7 @@ class Record(object):
     self._chunk_threshold = chunk_threshold
 
     self._reader = None
+    self._encryptor = None
 
     self._open(f, mode, allow_unindexed)
 
@@ -70,36 +95,55 @@ class Record(object):
     return self.read_messages()
 
   def __enter__(self):
-    pass
+    return self
 
-  def __exit__(self):
-    pass
+  def __exit__(self, exc_type, exc_value, traceback):
+    self.close()
 
   @property
   def options(self):
-    pass
+    return {'compression' : self._compression, \
+            'chunk_threshold' : self._chunk_threshold}
 
   @property
   def filename(self):
-    pass
+    return self._filename
 
   @property
   def version(self):
-    pass
+    return self._version
 
   @property
   def mode(self):
-    pass
+    return self._mode
 
   @property
   def size(self):
-    pass
+    return self._size
+
+  def _get_compression(self):
+    return self._compression
+
+  def _set_compression(self, compression):
+    allowed_compressions = set(item.value for item in Compression)
+    if compression not in allowed_compressions:
+      raise ValueError('compression must be one of: {}'.format(allowed_compressions))
+
+    self._compression = compression
+
+  compression = property(_get_compression, _set_compression)
+
 
   def _get_chunk_threshold(self):
-    pass
+    return self._chunk_threshold
 
   def _set_chunk_threshold(self, chunk_threshold):
-    pass
+    assert chunk_threshold >= MIN_CHUNK_SIZE, \
+        "chunk_threshold should large than {}".format(MIN_CHUNK_SIZE)
+    self._chunk_threshold = chunk_threshold
+
+  chunk_threshold = property(_get_chunk_threshold, _set_chunk_threshold)
+
 
   def read_messages(self, topics=None, start_time=None, end_time=None):
     if topics and isinstance(topics, str):
@@ -108,18 +152,55 @@ class Record(object):
     return self._reader.read_messages(topics, start_time, end_time)
 
   def flush(self):
-    pass
+    if not self._file:
+      raise ValueError('I/O operation on closed record')
+
+    # todo(zero): stop writing
 
   def write(self, topic, msg, t=None, raw=False, proto_descriptor=None):
-    pass
+    if not self._file:
+      raise ValueError('I/O operation on closed record')
+
+    if not topic:
+      raise ValueError('topic is invalid')
+    if not msg:
+      raise ValueError('msg is invalid')
+
+    if t is None:
+      t = time.time()
+
+    # todo(zero): add write message
 
   def reindex(self):
+    # todo(zero): Reindex, modify chunkinfo and descriptor
     pass
 
   def close(self):
-    pass
+    if self._file:
+      if self._mode in 'wa':
+        self._stop_writing()
+
+      self._close_file()
 
   def get_message_count(self, topic_filters=None):
+    message_count = 0
+
+    if topic_filters is not None:
+      channel_cache = self.get_channel_cache(topic_filters)
+      for channel_info in channel_cache:
+        message_count += channel_info.message_number
+    else:
+      message_count = self._message_number
+
+    return message_count
+
+  def get_start_time(self):
+    return self._start_time
+
+  def get_end_time(self):
+    return self._end_time
+
+  def set_encryptor(self, encryptor=None, param=None):
     pass
 
   def __str__(self):
@@ -235,20 +316,16 @@ class Record(object):
   def _set_compression_mode(self, compression):
     pass
 
-  def _write_file_header_record(self):
+  def _write_header(self):
     pass
 
-  def _write_connection_record(self):
-    pass
-
-  def _write_message_data_record(self):
+  def _write_index(self):
+    """ Add message Index
+    """
     pass
 
   def _write_chunk_header(self):
     pass
 
-  def _write_connection_index_record(self):
-    pass
-
-  def _write_chunk_info_record(self):
+  def _write_chunk_body(self):
     pass
