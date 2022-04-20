@@ -42,3 +42,15 @@ The following is the output log of the program
 /apollo/canbus/chassis, <class 'Chassis'>, 1627031535246913234
 /apollo/canbus/chassis, <class 'Chassis'>, 1627031535253680838
 ```
+
+#### Parse messages
+```
+pip install opencv-python
+pip install pypcd
+```
+
+1. pcl
+you can read more form [python-pcl](https://github.com/strawlab/python-pcl)
+
+2. camera
+use cv2 to save image
