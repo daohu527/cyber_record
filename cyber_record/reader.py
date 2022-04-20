@@ -41,6 +41,7 @@ class Reader:
     self.bag = bag
     self.chunk_header_indexs = []
     self.chunk_body_indexs = []
+    self.sorted_chunk_indexs = []
     self.channels = {}
     self.desc_pool = descriptor_pool.DescriptorPool()
 
@@ -56,9 +57,10 @@ class Reader:
     self.bag._start_time = header.begin_time
     self.bag._end_time = header.end_time
 
-  def _sort_chunk_header(self):
-    self.chunk_header_indexs.sort(key = \
-      lambda index:index.chunk_header_cache.begin_time)
+  def _sort_chunk_indexs(self):
+    self.sorted_chunk_indexs = sorted( \
+      zip(self.chunk_header_indexs, self.chunk_body_indexs), \
+      key=lambda x: x[0].chunk_header_cache.begin_time)
 
   def start_reading(self):
     header = self.read_header()
@@ -77,8 +79,8 @@ class Reader:
       else:
         print("Unknown Index type!")
 
-    self._sort_chunk_header()
-    # print(indexs)
+    self._sort_chunk_indexs()
+    # print(index)
 
     self._create_message_type_pool()
 
@@ -86,6 +88,13 @@ class Reader:
 
   def reindex(self):
     pass
+
+  def get_channel_cache(self, topic_filters):
+    filtered_channel_cache = []
+    for channel_name in self.channels:
+      if topic_filters is None or channel_name not in topic_filters:
+        filtered_channel_cache.append(self.channels[channel_name])
+    return filtered_channel_cache
 
   def _is_valid_topic(self, topic, topics):
     if topics is None:
@@ -100,8 +109,8 @@ class Reader:
       return False
     return True
 
-  def _chunk_header_indexs(self, start_time, end_time):
-    for chunk_header_index in self.chunk_header_indexs:
+  def _get_chunk_body_indexs(self, start_time, end_time):
+    for chunk_header_index, chunk_body_index in self.sorted_chunk_indexs:
       if start_time and \
           chunk_header_index.chunk_header_cache.end_time < start_time:
         continue
@@ -109,15 +118,15 @@ class Reader:
       if end_time and \
           chunk_header_index.chunk_header_cache.begin_time > end_time:
         continue
-
-      yield chunk_header_index
+      # Todo(zero): should be chunk_body_index, there maybe a bug in apollo!!!
+      yield chunk_body_index
 
   def read_messages(self, topics, start_time, end_time):
-    for chunk_header_index in self._chunk_header_indexs(start_time, end_time):
-      self._set_position(chunk_header_index.position)
-      self._skip_record()
-      position = self._cur_position()
-      proto_chunk_body = self.read_chunk_body(position)
+    for chunk_body_index in self._get_chunk_body_indexs(start_time, end_time):
+      # print(chunk_body_index)
+      proto_chunk_body = self.read_chunk_body(chunk_body_index.position)
+      if proto_chunk_body is None:
+        continue
       self.chunk.swap(proto_chunk_body)
 
       while not self.chunk.end():
@@ -126,6 +135,38 @@ class Reader:
            self._is_valid_time(single_message.time, start_time, end_time):
           proto_message = self._create_message(single_message)
           yield single_message.channel_name, proto_message, single_message.time
+
+  def read_messages_fallback(self, topics, start_time, end_time):
+    """
+    deprecated
+    """
+    while self.message_index < self.bag._message_number:
+      if self.chunk.end():
+        self.read_next_chunk()
+
+      single_message = self.chunk.next_message()
+      proto_message = self._create_message(single_message)
+      self.message_index += 1
+      yield single_message.channel_name, proto_message, single_message.time
+
+  def read_next_chunk(self):
+    """
+    deprecated
+    """
+    while self.bag._file.tell() != self.bag._size:
+      section = Section()
+      self._read_section(section)
+
+      if section.type == record_pb2.SECTION_CHUNK_BODY:
+        data = self.bag._file.read(section.size)
+        proto_chunk_body = record_pb2.ChunkBody()
+        proto_chunk_body.ParseFromString(data)
+        self.chunk.swap(proto_chunk_body)
+        return True
+      else:
+        self.bag._file.seek(section.size, 1)
+    else:
+      return False
 
   def read_header(self):
     self._set_position(0)

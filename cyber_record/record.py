@@ -151,6 +151,15 @@ class Record(object):
 
     return self._reader.read_messages(topics, start_time, end_time)
 
+  def read_messages_fallback(self, topics=None, start_time=None, end_time=None):
+    """
+    deprecated
+    """
+    if topics and isinstance(topics, str):
+      topics = [topics]
+
+    return self._reader.read_messages(topics, start_time, end_time)
+
   def flush(self):
     if not self._file:
       raise ValueError('I/O operation on closed record')
@@ -186,7 +195,7 @@ class Record(object):
     message_count = 0
 
     if topic_filters is not None:
-      channel_cache = self.get_channel_cache(topic_filters)
+      channel_cache = self._reader.get_channel_cache(topic_filters)
       for channel_info in channel_cache:
         message_count += channel_info.message_number
     else:
