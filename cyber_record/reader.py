@@ -142,31 +142,12 @@ class Reader:
     """
     while self.message_index < self.bag._message_number:
       if self.chunk.end():
-        self.read_next_chunk()
+        self._read_next_chunk()
 
       single_message = self.chunk.next_message()
       proto_message = self._create_message(single_message)
       self.message_index += 1
       yield single_message.channel_name, proto_message, single_message.time
-
-  def read_next_chunk(self):
-    """
-    deprecated
-    """
-    while self.bag._file.tell() != self.bag._size:
-      section = Section()
-      self._read_section(section)
-
-      if section.type == record_pb2.SECTION_CHUNK_BODY:
-        data = self.bag._file.read(section.size)
-        proto_chunk_body = record_pb2.ChunkBody()
-        proto_chunk_body.ParseFromString(data)
-        self.chunk.swap(proto_chunk_body)
-        return True
-      else:
-        self.bag._file.seek(section.size, 1)
-    else:
-      return False
 
   def read_header(self):
     self._set_position(0)
