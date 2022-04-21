@@ -23,17 +23,10 @@ You can read messages directly from the record file in the following ways.
 ```python
 from cyber_record.record import Record
 
-
 file_name = "20210521122747.record.00000"
 record = Record(file_name)
 for topic, message, t in record.read_messages():
-  print("{}, {}, {}".format(topic, message, t))
-```
-
-You can also find the read record example directly in the tests directory
-```
-cd tests/
-python3 read_record.py
+  print("{}, {}, {}".format(topic, type(message), t))
 ```
 
 The following is the output log of the program
@@ -84,10 +77,19 @@ you can use `ImageParser` to parse and save images.
 image_parser = ImageParser(output_path='../test')
 for topic, message, t in record.read_messages():
   if topic == "/apollo/sensor/camera/front_6mm/image":
-    image_parser.parse(image)
+    image_parser.parse(message)
     # or use timestamp as image file name
     # image_parser.parse(image, t)
 ```
 
 #### lidar
-todo
+you can use `PointCloudParser` to parse and save pointclouds.
+```python
+pointcloud_parser = PointCloudParser('../test')
+for topic, message, t in record.read_messages():
+  if topic == "/apollo/sensor/lidar32/compensator/PointCloud2":
+    pointcloud_parser.parse(message)
+    # other modes, default is 'ascii'
+    # pointcloud_parser.parse(message, mode='binary')
+    # pointcloud_parser.parse(message, mode='binary_compressed')
+```

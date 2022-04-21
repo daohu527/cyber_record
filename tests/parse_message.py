@@ -16,12 +16,9 @@
 
 
 import csv
-import cv2
-import numpy as np
-import pypcd
 
 from cyber_record.record import Record
-from record_msg.parser import to_csv, ImageParser
+from record_msg.parser import to_csv, ImageParser, PointCloudParser
 
 
 def parse_pose(pose):
@@ -46,6 +43,8 @@ def parse_planning(planning):
 def parse_image(image):
   image_parser.parse(image)
 
+def parse_pointcloud(pointcloud):
+  pointcloud_parser.parse(message)
 
 if __name__ == "__main__":
   # csv
@@ -53,10 +52,11 @@ if __name__ == "__main__":
   writer = csv.writer(f)
 
   # bag
-  file_name = "/home/terra/01code/apollo/data/bag/20210611150205.record.00001"
+  file_name = "example.record.00000"
   record = Record(file_name)
 
   image_parser = ImageParser('../test')
+  pointcloud_parser = PointCloudParser('../test')
 
   for topic, message, t in record.read_messages_fallback():
     if topic == "/apollo/localization/pose":
@@ -72,8 +72,8 @@ if __name__ == "__main__":
     elif topic == "/apollo/sensor/camera/front_6mm/image":
       parse_image(message)
     elif topic == "/apollo/sensor/lidar32/compensator/PointCloud2":
-      pass
+      parse_pointcloud(message)
     else:
-      print("{} not parse".format(topic))
+      pass
 
   f.close()
