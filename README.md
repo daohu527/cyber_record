@@ -18,7 +18,7 @@ from cyber_record.record import Record
 ## Examples
 Below are some examples to help you read and write messages from record files.
 
-#### Read messages
+## Read messages
 You can read messages directly from the record file in the following ways.
 ```python
 from cyber_record.record import Record
@@ -43,14 +43,51 @@ The following is the output log of the program
 /apollo/canbus/chassis, <class 'Chassis'>, 1627031535253680838
 ```
 
-#### Parse messages
-```
-pip install opencv-python
-pip install pypcd
+#### Filter Read
+You can also read messages filtered by topics and time. This will improve the speed of parsing messages.
+```python
+def read_filter_by_both():
+  record = Record(file_name)
+  for topic, message, t in record.read_messages('/apollo/canbus/chassis', \
+      start_time=1627031535164278940, end_time=1627031535215164773):
+    print("{}, {}, {}".format(topic, type(message), t))
 ```
 
-1. pcl
-you can read more form [python-pcl](https://github.com/strawlab/python-pcl)
 
-2. camera
-use cv2 to save image
+## Parse messages
+To avoid introducing too many dependencies, you can save messages by `record_msg`.
+```
+pip install record_msg
+```
+
+`record_msg` provides 3 types of interfaces
+
+#### csv format
+you can use `to_csv` to format objects so that they can be easily saved in csv format.
+```python
+f = open("message.csv", 'w')
+writer = csv.writer(f)
+
+def parse_pose(pose):
+  '''
+  save pose to csv file
+  '''
+  line = to_csv([pose.header.timestamp_sec, pose.pose])
+  writer.writerow(line)
+
+f.close()
+```
+
+#### image
+you can use `ImageParser` to parse and save images.
+```python
+image_parser = ImageParser(output_path='../test')
+for topic, message, t in record.read_messages():
+  if topic == "/apollo/sensor/camera/front_6mm/image":
+    image_parser.parse(image)
+    # or use timestamp as image file name
+    # image_parser.parse(image, t)
+```
+
+#### lidar
+todo
