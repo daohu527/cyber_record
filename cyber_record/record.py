@@ -158,7 +158,7 @@ class Record(object):
     if topics and isinstance(topics, str):
       topics = [topics]
 
-    return self._reader.read_messages(topics, start_time, end_time)
+    return self._reader.read_messages_fallback(topics, start_time, end_time)
 
   def flush(self):
     if not self._file:
