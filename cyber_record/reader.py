@@ -21,19 +21,7 @@ from google.protobuf import message_factory, descriptor_pb2, descriptor_pool
 from cyber_record.cyber.proto import record_pb2, proto_desc_pb2
 from cyber_record.file_object.chunk import Chunk
 from cyber_record.record_exception import RecordException
-
-
-SECTION_LENGTH = 16
-HEADER_LENGTH = 2048
-
-
-class Section:
-  def __init__(self, section_type=None, data_size=0) -> None:
-    self.type = section_type
-    self.size = data_size
-
-  def __str__(self):
-    return "Section type: {}, size: {}".format(self.type, self.size)
+from cyber_record.common import Section, SECTION_LENGTH, HEADER_LENGTH
 
 
 class Reader:

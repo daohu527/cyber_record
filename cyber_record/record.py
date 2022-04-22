@@ -23,6 +23,7 @@ import time
 
 
 from cyber_record.reader import Reader
+from cyber_record.writer import Writer
 
 
 DEFAULT_CHUNK_SIZE = 200 * 1024 * 1024
@@ -86,6 +87,7 @@ class Record(object):
     self._chunk_threshold = chunk_threshold
 
     self._reader = None
+    self._writer = None
     self._encryptor = None
 
     self._open(f, mode, allow_unindexed)
@@ -166,7 +168,7 @@ class Record(object):
 
     # todo(zero): stop writing
 
-  def write(self, topic, msg, t=None, raw=False, proto_descriptor=None):
+  def write(self, topic, msg, t=None, raw=True, proto_descriptor=None):
     if not self._file:
       raise ValueError('I/O operation on closed record')
 
@@ -273,7 +275,7 @@ class Record(object):
       self._filename = f
 
     try:
-      self._create_reader()
+      self._create_writer()
       self._start_writing()
     except:
       self._close_file()
@@ -304,14 +306,17 @@ class Record(object):
   def _create_reader(self):
     self._reader = Reader(self)
 
+  def _create_writer(self):
+    self._writer = Writer(self)
+
   def _start_writing(self):
-    self._write_file_header_record(0, 0, 0)
+    self._writer.write_header()
 
   def _start_appending(self):
     pass
 
   def _stop_writing(self):
-    pass
+    self._writer.flush()
 
   def _start_writing_chunk(self):
     pass
