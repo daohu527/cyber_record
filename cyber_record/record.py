@@ -29,6 +29,10 @@ from cyber_record.writer import Writer
 DEFAULT_CHUNK_SIZE = 200 * 1024 * 1024
 MIN_CHUNK_SIZE = 512
 
+RECORD_MAJOR_VERSION = 1
+RECORD_MINOR_VERSION = 0
+
+
 class Compression(Enum):
   NONE = 'none'
   BZ2  = 'bz2'
@@ -67,9 +71,10 @@ class Record(object):
       if 'chunk_threshold' in options:
         chunk_threshold = options['chunk_threshold']
 
-    self._file     = None
-    self._filename = None
-    self._version  = None
+    self._file           = None
+    self._filename       = None
+    self._major_version  = None
+    self._minor_version  = None
 
     self._size           = 0
     self._message_number = 0
@@ -113,7 +118,7 @@ class Record(object):
 
   @property
   def version(self):
-    return self._version
+    return "{}.{}".format(self.bag._major_version, self.bag._minor_version)
 
   @property
   def mode(self):
