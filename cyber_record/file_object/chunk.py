@@ -17,8 +17,6 @@
 
 from cyber_record.cyber.proto import record_pb2
 
-from cyber_record.common import CHUNK_RAW_SIZE, CHUNK_INTERVAL
-
 
 class Chunk:
   def __init__(self) -> None:
@@ -59,8 +57,8 @@ class Chunk:
     self._proto_chunk_header.raw_size += len(message.content)
     self._proto_chunk_header.message_number += 1
 
-  def need_split(self):
-    return self._size() >= CHUNK_RAW_SIZE or self._interval() >= CHUNK_INTERVAL
+  def need_split(self, chunk_raw_size, chunk_interval):
+    return self._size() >= chunk_raw_size or self._interval() >= chunk_interval
 
   def _interval(self):
     return self._proto_chunk_header.end_time - \

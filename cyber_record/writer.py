@@ -16,9 +16,13 @@
 
 
 from cyber_record.cyber.proto import record_pb2, proto_desc_pb2
-from cyber_record.common import Section, HEADER_LENGTH
+from cyber_record.common import (
+  Section,
+  HEADER_LENGTH,
+  CHUNK_RAW_SIZE,
+  CHUNK_INTERVAL
+)
 from cyber_record.file_object.chunk import Chunk
-
 
 class Writer():
   def __init__(self, bag) -> None:
@@ -36,14 +40,12 @@ class Writer():
     self._header.major_version = self.bag._major_version
     self._header.minor_version = self.bag._minor_version
     self._header.compress = self.bag._compression
-    # self._header.chunk_interval
+    self._header.chunk_interval = CHUNK_INTERVAL
     # self._header.segment_interval
 
-    # self._header.chunk_number
-    # self._header.channel_number
     # self._header.size
     # self._header.is_complete
-    # self._header.chunk_raw_size
+    self._header.chunk_raw_size = CHUNK_RAW_SIZE
     # self._header.segment_raw_size
 
   def write(self, topic, msg, t, raw=True, proto_descriptor=None):
@@ -53,14 +55,17 @@ class Writer():
 
     self._header.message_number += 1
 
-    if self._chunk.need_split():
-      self.write_chunk_header(self._chunk._proto_chunk_header)
+    if self._chunk.need_split(
+        self._header.chunk_raw_size,
+        self._header.chunk_interval):
       self.write_chunk_body(self._chunk._proto_chunk_body)
+      self.write_chunk_header(self._chunk._proto_chunk_header)
       self._chunk.swap(record_pb2.ChunkBody())
+      self._header.chunk_number += 1
 
     if self._is_new_channel(topic):
       # Todo(zero):
-      pass
+      self._header.channel_number += 1
     self._chunk.add_message(topic, msg, t, raw=True)
 
   def write_header(self):
@@ -99,8 +104,8 @@ class Writer():
   def flush(self):
     # todo(zero)
     if self._chunk._size() != 0:
-      self.write_chunk_header(self._chunk._proto_chunk_header)
       self.write_chunk_body(self._chunk._proto_chunk_body)
+      self.write_chunk_header(self._chunk._proto_chunk_header)
     self.write_index()
 
   def _is_new_channel(self, topic):
