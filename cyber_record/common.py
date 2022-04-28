@@ -15,6 +15,8 @@
 # limitations under the License.
 
 
+from enum import Enum
+
 SECTION_LENGTH = 16
 HEADER_LENGTH = 2048
 CHUNK_INTERVAL = 20 * 1000 * 1000 * 1000    # 20s
@@ -22,6 +24,16 @@ SEGMENT_INTERVAL = 60 * 1000 * 1000 * 1000  # 60s
 CHUNK_RAW_SIZE = 200 * 1024 * 1024     # 200MB
 SEGMENT_RAW_SIZE = 2048 * 1024 * 1024  # 2GB
 
+MIN_CHUNK_SIZE = 512
+
+RECORD_MAJOR_VERSION = 1
+RECORD_MINOR_VERSION = 0
+
+
+class Compression(Enum):
+  NONE = 'none'
+  BZ2  = 'bz2'
+  LZ4 = 'lz4'
 
 class Section:
   def __init__(self, section_type=None, data_size=0) -> None:

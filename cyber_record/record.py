@@ -15,7 +15,6 @@
 # limitations under the License.
 
 
-from enum import Enum
 import struct
 import io
 import os.path
@@ -25,18 +24,14 @@ import time
 from cyber_record.reader import Reader
 from cyber_record.writer import Writer
 
-
-DEFAULT_CHUNK_SIZE = 200 * 1024 * 1024
-MIN_CHUNK_SIZE = 512
-
-RECORD_MAJOR_VERSION = 1
-RECORD_MINOR_VERSION = 0
-
-
-class Compression(Enum):
-  NONE = 'none'
-  BZ2  = 'bz2'
-  LZ4 = 'lz4'
+from cyber_record.common import (
+  Compression,
+  CHUNK_RAW_SIZE,
+  CHUNK_INTERVAL,
+  MIN_CHUNK_SIZE,
+  RECORD_MAJOR_VERSION,
+  RECORD_MINOR_VERSION,
+)
 
 
 class Record(object):
@@ -44,7 +39,7 @@ class Record(object):
   Serialize messages to and from a single file on disk using record format.
   """
   def __init__(self, f, mode='r', compression=Compression.NONE, \
-      chunk_threshold=DEFAULT_CHUNK_SIZE, allow_unindexed=False, \
+      chunk_threshold=CHUNK_RAW_SIZE, allow_unindexed=False, \
       options=None):
     """
     Open a bag file.  The mode can be 'r', 'w', or 'a' for reading (default),
@@ -73,8 +68,8 @@ class Record(object):
 
     self._file           = None
     self._filename       = None
-    self._major_version  = None
-    self._minor_version  = None
+    self._major_version  = RECORD_MAJOR_VERSION
+    self._minor_version  = RECORD_MINOR_VERSION
 
     self._size           = 0
     self._message_number = 0
@@ -82,14 +77,21 @@ class Record(object):
     self._start_time = 0
     self._end_time   = 0
 
-    allowed_compressions = set(item for item in Compression)
-    if compression not in allowed_compressions:
-      raise ValueError('compression must be one of: {}'.format(allowed_compressions))
-    self._compression = compression
 
     assert chunk_threshold >= MIN_CHUNK_SIZE, \
         "chunk_threshold should large than {}".format(MIN_CHUNK_SIZE)
     self._chunk_threshold = chunk_threshold
+
+    # config
+    self._chunk_interval = CHUNK_INTERVAL
+    self._chunk_raw_size = chunk_threshold
+    self._segment_interval = 0
+    self._segment_raw_size = 0
+
+    allowed_compressions = set(item for item in Compression)
+    if compression not in allowed_compressions:
+      raise ValueError('compression must be one of: {}'.format(allowed_compressions))
+    self._compression = compression
 
     self._reader = None
     self._writer = None
@@ -167,13 +169,7 @@ class Record(object):
 
     return self._reader.read_messages_fallback(topics, start_time, end_time)
 
-  def flush(self):
-    if not self._file:
-      raise ValueError('I/O operation on closed record')
-
-    # todo(zero): stop writing
-
-  def write(self, topic, msg, t=None, raw=True, proto_descriptor=None):
+  def write(self, topic, msg, t=None, proto_descriptor=None):
     if not self._file:
       raise ValueError('I/O operation on closed record')
 
@@ -185,7 +181,11 @@ class Record(object):
     if t is None:
       t = time.time()
 
-    # todo(zero): add write message
+    if self._writer._need_split_file():
+      # Todo(zero): need replace file handle, we don't support yet!
+      pass
+
+    self._writer.write(topic, msg, t, proto_descriptor)
 
   def reindex(self):
     # todo(zero): Reindex, modify chunkinfo and descriptor
@@ -224,9 +224,6 @@ class Record(object):
 
 
   # internal interface
-  def _read_message(self, position, raw=False, return_proto_descriptor=False):
-    pass
-
   def _get_descriptors(self, topics=None, descriptor_filter=None):
     pass
 
@@ -321,30 +318,4 @@ class Record(object):
     pass
 
   def _stop_writing(self):
-    self._writer.flush()
-
-  def _start_writing_chunk(self):
-    pass
-
-  def _get_chunk_offset(self):
-    pass
-
-  def _stop_writing_chunk(self):
-    pass
-
-  def _set_compression_mode(self, compression):
-    pass
-
-  def _write_header(self):
-    pass
-
-  def _write_index(self):
-    """ Add message Index
-    """
-    pass
-
-  def _write_chunk_header(self):
-    pass
-
-  def _write_chunk_body(self):
-    pass
+    self._writer.close()

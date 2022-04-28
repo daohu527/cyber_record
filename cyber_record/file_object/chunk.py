@@ -26,12 +26,16 @@ class Chunk:
 
   def swap(self, proto_chunk_body):
     self._index = 0
-    self._proto_chunk_header = record_pb2.ChunkHeader()
     self._proto_chunk_body = proto_chunk_body
     self._proto_chunk_header.message_number = len(proto_chunk_body)
 
+  def clear(self):
+    self._index = 0
+    self._proto_chunk_header = record_pb2.ChunkHeader()
+    self._proto_chunk_body = record_pb2.ChunkBody()
+
   def next_message(self):
-    if self._index >= self._num() or self._index < 0:
+    if self._index >= self.num() or self._index < 0:
       return None
 
     message = self._proto_chunk_body.messages[self._index]
@@ -39,33 +43,30 @@ class Chunk:
     return message
 
   def end(self):
-    return self._index >= self._num()
+    return self._index >= self.num()
 
   def add_message(self, topic, msg, t, raw=True):
     if self._proto_chunk_header.begin_time == 0:
       self._proto_chunk_header.begin_time = t
-
     self._proto_chunk_header.end_time = t
 
-    message = self._proto_chunk_body.add()
+    message = self._proto_chunk_body.messages.add()
     message.channel_name = topic
     message.time = t
-    if raw:
-      message.content = msg.SerializeToString()
-    else:
-      message.content = msg
+    message.content = msg.SerializeToString()
+
     self._proto_chunk_header.raw_size += len(message.content)
     self._proto_chunk_header.message_number += 1
 
-  def need_split(self, chunk_raw_size, chunk_interval):
-    return self._size() >= chunk_raw_size or self._interval() >= chunk_interval
+  def empty(self):
+    return self.num() == 0
 
-  def _interval(self):
-    return self._proto_chunk_header.end_time - \
-        self._proto_chunk_header.begin_time
+  def interval(self):
+    return (self._proto_chunk_header.end_time -
+            self._proto_chunk_header.begin_time)
 
-  def _size(self):
+  def size(self):
     return self._proto_chunk_header.raw_size
 
-  def _num(self):
+  def num(self):
     self._proto_chunk_header.message_number
