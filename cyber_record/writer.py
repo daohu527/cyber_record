@@ -90,9 +90,8 @@ class Writer():
         proto_descriptor = proto_desc
 
       channel_position = self._cur_position()
-      self._add_channel(topic, type(msg), proto_descriptor)
-      self._add_channel_index(channel_position, topic, type(msg),
-                              proto_descriptor)
+      self._add_channel(topic, msg, proto_descriptor)
+      self._add_channel_index(channel_position, topic, msg, proto_descriptor)
       self._header.channel_number += 1
 
     # channel_cache.message_number
@@ -153,20 +152,20 @@ class Writer():
     self._header.is_complete = True
     self.write_header()
 
-  def _add_channel(self, topic, msg_type, proto_desc):
+  def _add_channel(self, topic, msg, proto_desc):
     proto_channel = record_pb2.Channel()
     proto_channel.name = topic
-    proto_channel.message_type = msg_type.__name__
+    proto_channel.message_type = '{}.{}'.format(msg.DESCRIPTOR.file.package, type(msg).__name__)
     proto_channel.proto_desc = proto_desc.SerializeToString()
     self.write_proto_record(proto_channel)
 
-  def _add_channel_index(self, channel_position, topic, msg_type, proto_desc):
+  def _add_channel_index(self, channel_position, topic, msg, proto_desc):
     channel_index = self._index.indexes.add()
     channel_index.type = record_pb2.SECTION_CHANNEL
     channel_index.position = channel_position
     channel_index.channel_cache.message_number = 0
     channel_index.channel_cache.name = topic
-    channel_index.channel_cache.message_type = msg_type.__name__
+    channel_index.channel_cache.message_type = '{}.{}'.format(msg.DESCRIPTOR.file.package, type(msg).__name__)
     channel_index.channel_cache.proto_desc = proto_desc.SerializeToString()
 
     # add to dict

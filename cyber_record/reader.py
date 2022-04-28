@@ -230,6 +230,7 @@ class Reader:
     for dependency in proto_desc.dependencies:
       self._add_dependency(dependency)
     self.desc_pool.Add(file_desc_proto)
+    # print(file_desc_proto)
 
   def _create_message_type_pool(self):
     for channel_name, channel_cache in self.channels.items():
@@ -237,6 +238,7 @@ class Reader:
       proto_desc.ParseFromString(channel_cache.proto_desc)
       self._add_dependency(proto_desc)
 
+      # print(channel_cache.message_type)
       descriptor = self.desc_pool.FindMessageTypeByName(channel_cache.message_type)
       message_type = message_factory.MessageFactory().GetPrototype(descriptor)
       self.message_type_pool.update({channel_name: message_type})
