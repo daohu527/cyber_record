@@ -15,12 +15,37 @@
 # limitations under the License.
 
 
+from google.protobuf import descriptor_pb2
+
 from cyber_record.cyber.proto import record_pb2, proto_desc_pb2
 from cyber_record.common import (
   Section,
   HEADER_LENGTH,
+  Compression,
 )
 from cyber_record.file_object.chunk import Chunk
+
+
+def to_pb_compress(compression):
+  if compression == Compression.NONE:
+    return record_pb2.COMPRESS_NONE
+  elif compression == Compression.BZ2:
+    return record_pb2.COMPRESS_BZ2
+  elif compression == Compression.LZ4:
+    return record_pb2.COMPRESS_LZ4
+  else:
+    raise Exception()
+
+
+def get_proto_desc(file_descriptor, proto_desc):
+  file_desc_proto = descriptor_pb2.FileDescriptorProto()
+  file_descriptor.CopyToProto(file_desc_proto)
+  proto_desc.desc = file_desc_proto.SerializeToString()
+  # proto_desc.desc = file_descriptor.serialized_pb
+  for file_desc in file_descriptor.dependencies:
+    depend = proto_desc.dependencies.add()
+    get_proto_desc(file_desc, depend)
+
 
 class Writer():
   def __init__(self, bag) -> None:
@@ -40,7 +65,7 @@ class Writer():
   def build_header(self):
     self._header.major_version = self.bag._major_version
     self._header.minor_version = self.bag._minor_version
-    self._header.compress = self.bag._compression
+    self._header.compress = to_pb_compress(self.bag._compression)
     self._header.chunk_interval = self.bag._chunk_interval
     self._header.segment_interval = self.bag._segment_interval
     self._header.chunk_raw_size = self.bag._chunk_raw_size
@@ -59,6 +84,11 @@ class Writer():
       self._header.chunk_number += 1
 
     if self._new_channel(topic):
+      proto_desc = proto_desc_pb2.ProtoDesc()
+      get_proto_desc(msg.DESCRIPTOR.file, proto_desc)
+      if proto_descriptor is None:
+        proto_descriptor = proto_desc
+
       channel_position = self._cur_position()
       self._add_channel(topic, type(msg), proto_descriptor)
       self._add_channel_index(channel_position, topic, type(msg),
@@ -126,7 +156,7 @@ class Writer():
   def _add_channel(self, topic, msg_type, proto_desc):
     proto_channel = record_pb2.Channel()
     proto_channel.name = topic
-    proto_channel.message_type = msg_type
+    proto_channel.message_type = msg_type.__name__
     proto_channel.proto_desc = proto_desc.SerializeToString()
     self.write_proto_record(proto_channel)
 
@@ -136,7 +166,7 @@ class Writer():
     channel_index.position = channel_position
     channel_index.channel_cache.message_number = 0
     channel_index.channel_cache.name = topic
-    channel_index.channel_cache.message_type = msg_type
+    channel_index.channel_cache.message_type = msg_type.__name__
     channel_index.channel_cache.proto_desc = proto_desc.SerializeToString()
 
     # add to dict
@@ -160,7 +190,7 @@ class Writer():
     chunk_body_index.chunk_body_cache.message_number = message_number
 
   def _need_split_chunk(self):
-    return (self._chunk._size() >= self._header.chunk_raw_size or
+    return (self._chunk.size() >= self._header.chunk_raw_size or
             self._chunk.interval() >= self._header.chunk_interval)
 
   def _need_split_file(self):

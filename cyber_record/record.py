@@ -120,7 +120,7 @@ class Record(object):
 
   @property
   def version(self):
-    return "{}.{}".format(self.bag._major_version, self.bag._minor_version)
+    return "{}.{}".format(self._major_version, self._minor_version)
 
   @property
   def mode(self):
@@ -179,7 +179,11 @@ class Record(object):
       raise ValueError('msg is invalid')
 
     if t is None:
-      t = time.time()
+      time_ns = getattr(time, "time_ns", None)
+      if callable(time_ns):
+        t = time.time_ns()
+      else:
+        t = int(time.time() * 1e9)
 
     if self._writer._need_split_file():
       # Todo(zero): need replace file handle, we don't support yet!

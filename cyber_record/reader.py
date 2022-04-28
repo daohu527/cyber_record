@@ -53,7 +53,7 @@ class Reader:
   def start_reading(self):
     header = self.read_header()
     self._fill_header(header)
-    # print(header)
+    print(header)
 
     index = self.read_index(header)
     for single_index in index.indexes:
@@ -203,7 +203,7 @@ class Reader:
     section.type = int.from_bytes(self._read(4), byteorder='little')
     self._skip_size(4)
     section.size = int.from_bytes(self._read(8), byteorder='little')
-    # print(section)
+    print(section)
 
   def _read_next_chunk(self):
     while self.bag._file.tell() != self.bag._size:

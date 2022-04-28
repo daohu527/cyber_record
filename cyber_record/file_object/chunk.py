@@ -27,7 +27,7 @@ class Chunk:
   def swap(self, proto_chunk_body):
     self._index = 0
     self._proto_chunk_body = proto_chunk_body
-    self._proto_chunk_header.message_number = len(proto_chunk_body)
+    self._proto_chunk_header.message_number = len(proto_chunk_body.messages)
 
   def clear(self):
     self._index = 0
@@ -69,4 +69,4 @@ class Chunk:
     return self._proto_chunk_header.raw_size
 
   def num(self):
-    self._proto_chunk_header.message_number
+    return self._proto_chunk_header.message_number
