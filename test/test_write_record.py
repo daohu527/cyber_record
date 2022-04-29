@@ -20,14 +20,25 @@ import time
 from cyber_record.record import Record
 from modules.map.proto import map_pb2
 
-file_name = "example_w.record.00000"
+read_file_name = "example.record.00000"
+write_file_name = "example_w.record.00000"
+
 
 def write_message():
   pb_map = map_pb2.Map()
   pb_map.header.version = 'hello'.encode()
-  with Record(file_name, mode='w') as record:
-    record.write('test', pb_map, int(time.time() * 1e9))
+  with Record(write_file_name, mode='w') as record:
+    record.write('/apollo/map', pb_map, int(time.time() * 1e9))
+
+
+def read_write_message():
+  r_record = Record(read_file_name)
+  with Record(write_file_name, mode='w') as w_record:
+    for topic, message, t in r_record.read_messages_fallback():
+      print("{}, {}, {}".format(topic, type(message), t))
+      w_record.write(topic, message, t)
 
 
 if __name__ == "__main__":
-  write_message()
+  # write_message()
+  read_write_message()

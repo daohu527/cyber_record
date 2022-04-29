@@ -48,15 +48,15 @@ def parse_pointcloud(pointcloud):
 
 if __name__ == "__main__":
   # csv
-  f = open("message.csv", 'w')
+  f = open("../tests/message.csv", 'w')
   writer = csv.writer(f)
 
   # bag
   file_name = "example.record.00000"
   record = Record(file_name)
 
-  image_parser = ImageParser('../test')
-  pointcloud_parser = PointCloudParser('../test')
+  image_parser = ImageParser('../tests')
+  pointcloud_parser = PointCloudParser('../tests')
 
   for topic, message, t in record.read_messages_fallback():
     if topic == "/apollo/localization/pose":

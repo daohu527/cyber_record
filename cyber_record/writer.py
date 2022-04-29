@@ -144,6 +144,7 @@ class Writer():
       self.write_proto_record(self._chunk._proto_chunk_body)
       self._add_chunk_body_index(chunk_body_position, self._chunk.num())
 
+      self._header.chunk_number += 1
 
   def close(self):
     self.flush()

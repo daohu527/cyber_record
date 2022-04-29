@@ -27,7 +27,9 @@ from cyber_record.writer import Writer
 from cyber_record.common import (
   Compression,
   CHUNK_RAW_SIZE,
+  SEGMENT_RAW_SIZE,
   CHUNK_INTERVAL,
+  SEGMENT_INTERVAL,
   MIN_CHUNK_SIZE,
   RECORD_MAJOR_VERSION,
   RECORD_MINOR_VERSION,
@@ -85,8 +87,8 @@ class Record(object):
     # config
     self._chunk_interval = CHUNK_INTERVAL
     self._chunk_raw_size = chunk_threshold
-    self._segment_interval = 0
-    self._segment_raw_size = 0
+    self._segment_interval = SEGMENT_INTERVAL
+    self._segment_raw_size = SEGMENT_RAW_SIZE
 
     allowed_compressions = set(item for item in Compression)
     if compression not in allowed_compressions:
