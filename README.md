@@ -93,3 +93,17 @@ for topic, message, t in record.read_messages():
     # pointcloud_parser.parse(message, mode='binary')
     # pointcloud_parser.parse(message, mode='binary_compressed')
 ```
+
+
+## Write messages
+You can now also build record by messages.
+```python
+def write_message():
+  pb_map = map_pb2.Map()
+  pb_map.header.version = 'hello'.encode()
+
+  with Record(write_file_name, mode='w') as record:
+    record.write('/apollo/map', pb_map, int(time.time() * 1e9))
+```
+
+Its application scenario is to convert dataset into record files. Please note that it must be written in chronological order.
