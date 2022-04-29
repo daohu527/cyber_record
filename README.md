@@ -18,7 +18,7 @@ from cyber_record.record import Record
 ## Examples
 Below are some examples to help you read and write messages from record files.
 
-## Read messages
+## 1. Read messages
 You can read messages directly from the record file in the following ways.
 ```python
 from cyber_record.record import Record
@@ -47,7 +47,7 @@ def read_filter_by_both():
 ```
 
 
-## Parse messages
+## 2. Parse messages
 To avoid introducing too many dependencies, you can save messages by `record_msg`.
 ```
 pip install record_msg
@@ -95,8 +95,8 @@ for topic, message, t in record.read_messages():
 ```
 
 
-## Write messages
-You can now also build record by messages.
+## 3. Write messages
+You can now also build record by messages. You can write pb_message by `record.write`.
 ```python
 def write_message():
   pb_map = map_pb2.Map()
@@ -107,3 +107,34 @@ def write_message():
 ```
 
 Its application scenario is to convert dataset into record files. Please note that it must be written in chronological order.
+
+
+If you want to write raw message, you should first use `Builder` to help convert raw data to pb_message.
+
+#### image
+You can write image to record file like below. `ImageBuilder` will help you convert image to pb_image. `encoding` should be `rgb8`,`bgr8` or `gray`, `y`.
+```python
+def write_image():
+  image_builder = ImageBuilder()
+  write_file_name = "example_w.record.00002"
+  with Record(write_file_name, mode='w') as record:
+    img_path = 'test.jpg'
+    pb_image = image_builder.build(img_path, encoding='rgb8')
+    record.write('/apollo/sensor/camera/front_6mm/image',
+                 pb_image,
+                 int(time.time() * 1e9))
+```
+
+#### lidar
+You can write image to record file like below. `PointCloudBuilder` will help you convert pcd file to pb_point_cloud.
+```python
+def write_point_cloud():
+  point_cloud_builder = PointCloudBuilder()
+  write_file_name = "example_w.record.00003"
+  with Record(write_file_name, mode='w') as record:
+    pcd_path = 'test.pcd'
+    pb_point_cloud = point_cloud_builder.build(pcd_path)
+    record.write('/apollo/sensor/lidar32/compensator/PointCloud2',
+                 pb_point_cloud,
+                 int(time.time() * 1e9))
+```
