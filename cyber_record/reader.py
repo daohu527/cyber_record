@@ -21,19 +21,7 @@ from google.protobuf import message_factory, descriptor_pb2, descriptor_pool
 from cyber_record.cyber.proto import record_pb2, proto_desc_pb2
 from cyber_record.file_object.chunk import Chunk
 from cyber_record.record_exception import RecordException
-
-
-SECTION_LENGTH = 16
-HEADER_LENGTH = 2048
-
-
-class Section:
-  def __init__(self, section_type=None, data_size=0) -> None:
-    self.type = section_type
-    self.size = data_size
-
-  def __str__(self):
-    return "Section type: {}, size: {}".format(self.type, self.size)
+from cyber_record.common import Section, SECTION_LENGTH, HEADER_LENGTH
 
 
 class Reader:
@@ -65,7 +53,7 @@ class Reader:
   def start_reading(self):
     header = self.read_header()
     self._fill_header(header)
-    # print(header)
+    print(header)
 
     index = self.read_index(header)
     for single_index in index.indexes:
@@ -242,6 +230,7 @@ class Reader:
     for dependency in proto_desc.dependencies:
       self._add_dependency(dependency)
     self.desc_pool.Add(file_desc_proto)
+    # print(file_desc_proto)
 
   def _create_message_type_pool(self):
     for channel_name, channel_cache in self.channels.items():
@@ -249,6 +238,7 @@ class Reader:
       proto_desc.ParseFromString(channel_cache.proto_desc)
       self._add_dependency(proto_desc)
 
+      # print(channel_cache.message_type)
       descriptor = self.desc_pool.FindMessageTypeByName(channel_cache.message_type)
       message_type = message_factory.MessageFactory().GetPrototype(descriptor)
       self.message_type_pool.update({channel_name: message_type})
