@@ -1,5 +1,8 @@
 # cyber_record
-Cyber record file offline parse tool. You can use `cyber_record` to read messages from record file, or write messages to the record file.
+
+[![Documentation Status](https://readthedocs.org/projects/cyber-record/badge/?version=latest)](https://cyber-record.readthedocs.io/en/latest/?badge=latest)
+
+**[cyber_record](https://cyber-record.readthedocs.io/en/latest/)** is a cyber record file offline parse tool. You can use `cyber_record` to read messages from record file, or write messages to the record file.
 
 ## Quick start
 First install "cyber_record" by the following command.
