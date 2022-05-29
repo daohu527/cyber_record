@@ -52,7 +52,7 @@ You can read messages directly from the record file in the following ways.
    file_name = "20210521122747.record.00000"
    record = Record(file_name)
    for topic, message, t in record.read_messages():
-   print("{}, {}, {}".format(topic, type(message), t))
+      print("{}, {}, {}".format(topic, type(message), t))
 
 
 The following is the output log of the program
@@ -72,10 +72,10 @@ You can also read messages filtered by topics and time. This will improve the sp
    :linenos:
 
    def read_filter_by_both():
-   record = Record(file_name)
-   for topic, message, t in record.read_messages('/apollo/canbus/chassis', \
-         start_time=1627031535164278940, end_time=1627031535215164773):
-      print("{}, {}, {}".format(topic, type(message), t))
+      record = Record(file_name)
+      for topic, message, t in record.read_messages('/apollo/canbus/chassis', \
+            start_time=1627031535164278940, end_time=1627031535215164773):
+         print("{}, {}, {}".format(topic, type(message), t))
 
 
 Parse messages
@@ -101,11 +101,11 @@ you can use `to_csv` to format objects so that they can be easily saved in csv f
    writer = csv.writer(f)
 
    def parse_pose(pose):
-   '''
-   save pose to csv file
-   '''
-   line = to_csv([pose.header.timestamp_sec, pose.pose])
-   writer.writerow(line)
+      '''
+      save pose to csv file
+      '''
+      line = to_csv([pose.header.timestamp_sec, pose.pose])
+      writer.writerow(line)
 
    f.close()
 
@@ -119,10 +119,10 @@ you can use `ImageParser` to parse and save images.
 
    image_parser = ImageParser(output_path='../test')
    for topic, message, t in record.read_messages():
-   if topic == "/apollo/sensor/camera/front_6mm/image":
-      image_parser.parse(message)
-      # or use timestamp as image file name
-      # image_parser.parse(image, t)
+      if topic == "/apollo/sensor/camera/front_6mm/image":
+         image_parser.parse(message)
+         # or use timestamp as image file name
+         # image_parser.parse(image, t)
 
 
 lidar
@@ -134,11 +134,11 @@ you can use `PointCloudParser` to parse and save pointclouds.
 
    pointcloud_parser = PointCloudParser('../test')
    for topic, message, t in record.read_messages():
-   if topic == "/apollo/sensor/lidar32/compensator/PointCloud2":
-      pointcloud_parser.parse(message)
-      # other modes, default is 'ascii'
-      # pointcloud_parser.parse(message, mode='binary')
-      # pointcloud_parser.parse(message, mode='binary_compressed')
+      if topic == "/apollo/sensor/lidar32/compensator/PointCloud2":
+         pointcloud_parser.parse(message)
+         # other modes, default is 'ascii'
+         # pointcloud_parser.parse(message, mode='binary')
+         # pointcloud_parser.parse(message, mode='binary_compressed')
 
 
 Write messages
@@ -149,11 +149,11 @@ You can now also build record by messages. You can write pb_message by `record.w
    :linenos:
 
    def write_message():
-   pb_map = map_pb2.Map()
-   pb_map.header.version = 'hello'.encode()
+      pb_map = map_pb2.Map()
+      pb_map.header.version = 'hello'.encode()
 
-   with Record(write_file_name, mode='w') as record:
-      record.write('/apollo/map', pb_map, int(time.time() * 1e9))
+      with Record(write_file_name, mode='w') as record:
+         record.write('/apollo/map', pb_map, int(time.time() * 1e9))
 
 Its application scenario is to convert dataset into record files.
 
@@ -171,14 +171,14 @@ You can write image to record file like below. `ImageBuilder` will help you conv
    :linenos:
 
    def write_image():
-   image_builder = ImageBuilder()
-   write_file_name = "example_w.record.00002"
-   with Record(write_file_name, mode='w') as record:
-      img_path = 'test.jpg'
-      pb_image = image_builder.build(img_path, encoding='rgb8')
-      record.write('/apollo/sensor/camera/front_6mm/image',
-                  pb_image,
-                  int(time.time() * 1e9))
+      image_builder = ImageBuilder()
+      write_file_name = "example_w.record.00002"
+      with Record(write_file_name, mode='w') as record:
+         img_path = 'test.jpg'
+         pb_image = image_builder.build(img_path, encoding='rgb8')
+         record.write('/apollo/sensor/camera/front_6mm/image',
+                     pb_image,
+                     int(time.time() * 1e9))
 
 
 lidar
@@ -189,14 +189,14 @@ You can write image to record file like below. `PointCloudBuilder` will help you
    :linenos:
 
    def write_point_cloud():
-   point_cloud_builder = PointCloudBuilder()
-   write_file_name = "example_w.record.00003"
-   with Record(write_file_name, mode='w') as record:
-      pcd_path = 'test.pcd'
-      pb_point_cloud = point_cloud_builder.build(pcd_path)
-      record.write('/apollo/sensor/lidar32/compensator/PointCloud2',
-                  pb_point_cloud,
-                  int(time.time() * 1e9))
+      point_cloud_builder = PointCloudBuilder()
+      write_file_name = "example_w.record.00003"
+      with Record(write_file_name, mode='w') as record:
+         pcd_path = 'test.pcd'
+         pb_point_cloud = point_cloud_builder.build(pcd_path)
+         record.write('/apollo/sensor/lidar32/compensator/PointCloud2',
+                     pb_point_cloud,
+                     int(time.time() * 1e9))
 
 
 Indices and tables
