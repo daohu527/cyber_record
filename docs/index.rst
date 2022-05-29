@@ -5,7 +5,7 @@
 
 cyber_record
 ========================================
-Cyber record file offline parse tool. You can use `cyber_record` to read messages from record file, or write messages to the record file.
+**cyber_record** is a cyber record file offline parse tool. You can use `cyber_record` to read messages from record file, or write messages to the record file.
 
 
 .. toctree::
