@@ -7,9 +7,9 @@
 ## Quick start
 First install "cyber_record" by the following command.
 ```sh
-pip install cyber_record record_msg
+pip3 install cyber_record record_msg
 // or update version
-pip install cyber_record record_msg -U
+pip3 install cyber_record record_msg -U
 ```
 
 Then you can reference `cyber_record` by
