@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="cyber_record",
-    version="0.1.3",
+    version="0.1.4",
     author="daohu527",
     author_email="daohu527@gmail.com",
     description="Cyber record offline parse tool",
