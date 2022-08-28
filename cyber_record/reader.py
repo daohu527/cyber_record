@@ -230,12 +230,12 @@ class Reader:
     file_desc_proto.ParseFromString(proto_desc.desc)
     for dependency in proto_desc.dependencies:
       self._add_dependency(dependency)
-      
+
     try:
       self.desc_pool.FindFileByName(file_desc_proto.name)
     except KeyError:
       self.desc_pool.Add(file_desc_proto)
- 
+
     logging.debug(file_desc_proto)
 
   def _create_message_type_pool(self):
