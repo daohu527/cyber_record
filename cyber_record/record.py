@@ -216,6 +216,9 @@ class Record(object):
 
     return message_count
 
+  def get_channel_cache(self, topic_filters=None):
+    return self._reader.get_channel_cache(topic_filters)
+
   def get_start_time(self):
     return self._start_time
 

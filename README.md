@@ -7,16 +7,63 @@
 ## Quick start
 First install "cyber_record" by the following command.
 ```sh
-pip3 install cyber_record record_msg
+pip3 install cyber_record
 // or update version
-pip3 install cyber_record record_msg -U
+pip3 install cyber_record -U
 ```
 
-Then you can reference `cyber_record` by
+## Command line mode
+You can easily get the information in the record file by the following command.
+
+#### Info
+`cyber_record info` will output the statistics of the record file.
+
+```shell
+$ cyber_record info -f example.record.00000
+
+record_file: example.record.00000
+version:     1.0
+begin_time:  2021-07-23 17:12:15.114944
+end_time:    2021-07-23 17:12:15.253911
+duration:    0.14 s
+size:        477.55 KByte
+message_number: 34
+channel_number: 8
+
+/apollo/planning                      , apollo.planning.ADCTrajectory         , 1
+/apollo/routing_request               , apollo.routing.RoutingRequest         , 0
+/apollo/monitor                       , apollo.common.monitor.MonitorMessage  , 0
+/apollo/routing_response              , apollo.routing.RoutingResponse        , 0
+/apollo/routing_response_history      , apollo.routing.RoutingResponse        , 1
+/apollo/localization/pose             , apollo.localization.LocalizationEstimate, 15
+/apollo/canbus/chassis                , apollo.canbus.Chassis                 , 15
+/apollo/prediction                    , apollo.prediction.PredictionObstacles , 2
+```
+
+#### Echo
+`cyber_record echo` will print the message of the specified topic to the terminal.
+
+```shell
+$ cyber_record echo -f example.record.00000 -t /apollo/canbus/chassis
+
+engine_started: true
+speed_mps: 0.0
+throttle_percentage: 0.0
+brake_percentage: 0.0
+driving_mode: COMPLETE_AUTO_DRIVE
+gear_location: GEAR_DRIVE
+header {
+  timestamp_sec: 1627031535.112813
+  module_name: "SimControl"
+  sequence_num: 76636
+}
+```
+
+
+Or you can reference the `cyber_record` in the python file by
 ```python
 from cyber_record.record import Record
 ```
-
 
 ## Examples
 Below are some examples to help you read and write messages from record files.
@@ -53,7 +100,7 @@ def read_filter_by_both():
 ## 2. Parse messages
 To avoid introducing too many dependencies, you can save messages by `record_msg`.
 ```
-pip install record_msg
+pip3 install record_msg -U
 ```
 
 `record_msg` provides 3 types of interfaces
