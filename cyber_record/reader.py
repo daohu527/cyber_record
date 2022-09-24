@@ -223,7 +223,7 @@ class Reader:
       return False
 
   def _add_dependency(self, proto_desc):
-    if proto_desc is None:
+    if proto_desc is None or not proto_desc.desc:
       return
 
     file_desc_proto = descriptor_pb2.FileDescriptorProto()
@@ -242,12 +242,15 @@ class Reader:
     for channel_name, channel_cache in self.channels.items():
       proto_desc = proto_desc_pb2.ProtoDesc()
       proto_desc.ParseFromString(channel_cache.proto_desc)
-      self._add_dependency(proto_desc)
+      if channel_cache.proto_desc:
+        self._add_dependency(proto_desc)
 
-      logging.debug(channel_cache.message_type)
-      descriptor = self.desc_pool.FindMessageTypeByName(channel_cache.message_type)
-      message_type = message_factory.MessageFactory().GetPrototype(descriptor)
-      self.message_type_pool.update({channel_name: message_type})
+        logging.debug(channel_cache.message_type)
+        descriptor = self.desc_pool.FindMessageTypeByName(channel_cache.message_type)
+        message_type = message_factory.MessageFactory().GetPrototype(descriptor)
+        self.message_type_pool.update({channel_name: message_type})
+      else:
+        logging.warn("{} has no proto desc!".format(channel_name))
 
   def _create_message(self, single_message):
     message_type = self.message_type_pool.get(single_message.channel_name, None)
