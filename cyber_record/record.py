@@ -19,7 +19,9 @@ import struct
 import io
 import os.path
 import time
+import logging
 
+from cyber_record.cyber.proto import record_pb2, proto_desc_pb2
 
 from cyber_record.reader import Reader
 from cyber_record.writer import Writer
@@ -197,6 +199,48 @@ class Record(object):
     # todo(zero): Reindex, modify chunkinfo and descriptor
     pass
 
+  def recover_index(self, single_index):
+    header = self._reader.read_header()
+    self._writer.set_header(header)
+
+    # replace single_index in index
+    # !The "position" is no usage in SingleIndex
+    index = self._reader.read_index(header)
+    found = False
+    for s_index in index.indexes:
+      logging.debug(s_index)
+      s_channel_cache = s_index.channel_cache
+      t_channel_cache = single_index.channel_cache
+      if s_index.type == record_pb2.SECTION_CHANNEL:
+        if s_channel_cache.name == t_channel_cache.name:
+          if t_channel_cache.message_type:
+            s_channel_cache.message_type = t_channel_cache.message_type
+          s_channel_cache.proto_desc = t_channel_cache.proto_desc
+          found = True
+          break
+        elif s_channel_cache.message_type == t_channel_cache.message_type:
+          if t_channel_cache.name:
+            s_channel_cache.name = t_channel_cache.name
+          s_channel_cache.proto_desc = t_channel_cache.proto_desc
+          found = True
+          break
+
+    # If not found index, add it to indexes
+    if not found:
+      if single_index.channel_cache.message_type \
+          and single_index.channel_cache.name:
+        index.indexes.append(single_index)
+      else:
+        logging.error("Check topic: {} and meesage_type: {} is correct!".format(
+          single_index.channel_cache.name,
+          single_index.channel_cache.message_type,))
+        return
+
+    # write new index to record
+    self._writer.reindex(index)
+    self._writer.write_header()
+    print("Success recover index!")
+
   def close(self):
     if self._file:
       if self._mode in 'wa':
@@ -254,6 +298,7 @@ class Record(object):
       if mode == 'r': self._open_read(f)
       elif mode == 'w': self._open_write(f)
       elif mode == 'a': self._open_append(f)
+      elif mode == 'm': self._open_modify(f)
       else:
         raise ValueError('mode {} is invalid'.format(mode))
     except struct.error:
@@ -306,6 +351,21 @@ class Record(object):
 
     try:
       self._start_appending()
+    except:
+      self._close_file()
+      raise
+
+  def _open_modify(self, f):
+    if self._is_file(f):
+      self._file = f
+      self._filename = None
+    else:
+      self._file = open(f, 'r+b')
+      self._filename = f
+
+    try:
+      self._create_reader()
+      self._create_writer()
     except:
       self._close_file()
       raise
