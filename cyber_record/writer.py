@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 
 from google.protobuf import descriptor_pb2
 
@@ -99,8 +100,18 @@ class Writer():
 
     self._chunk.add_message(topic, msg, t)
 
+  def set_header(self, header):
+    self._header = header
+
   def write_header(self):
     self.write_proto_record(self._header)
+
+  def reindex(self, index):
+    if self._header.index_position:
+      self._set_position(self._header.index_position)
+      self.write_proto_record(index)
+    else:
+      logging.warn("Record header's index_position is 0!")
 
   def write_proto_record(self, proto_record):
     if isinstance(proto_record, record_pb2.Header):
@@ -128,9 +139,9 @@ class Writer():
         raise Exception()
       reserved_bytes = bytes(HEADER_LENGTH - len(record))
       self._write(reserved_bytes)
-
-    # Get the position of the end of the file
-    self._header.size = self._cur_position()
+    else:
+      # Get the position of the end of the file
+      self._header.size = self._cur_position()
 
 
   def flush(self):

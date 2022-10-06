@@ -65,6 +65,27 @@ Or you can reference the `cyber_record` in the python file by
 from cyber_record.record import Record
 ```
 
+#### recover
+If you find record file is missing index, you can recover the file by `cyber_record recover`.
+
+*It is best to backup the file before recover!!!*
+
+1. Generate the file descriptor set.
+ - `tmp` is the file name
+ - `modules/drivers/proto/sensor_image.proto` the message define proto file
+```
+protoc --include_imports --descriptor_set_out tmp modules/drivers/proto/sensor_image.proto
+```
+
+2. Recover the record file.
+ - `broken.record` is the file need repair
+ - `/apollo/sensor/camera/front_6mm/image` the topic of the need repair message
+ - `tmp` the descriptor file generated in the previous step
+ - `apollo.drivers.Image` the message type of the need repair message
+```
+cyber_record recover -f broken.record -t /apollo/sensor/camera/front_6mm/image -d tmp -m apollo.drivers.Image
+```
+
 ## Examples
 Below are some examples to help you read and write messages from record files.
 

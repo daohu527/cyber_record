@@ -15,10 +15,14 @@
 # limitations under the License.
 '''cyber_record command implementation'''
 
-from datetime import datetime
 import argparse
 import sys
+import logging
 
+from datetime import datetime
+from google.protobuf import descriptor_pb2
+
+from cyber_record.cyber.proto import record_pb2, proto_desc_pb2
 from cyber_record.record import Record
 
 
@@ -71,11 +75,59 @@ def cyber_record_echo(record_file, message_topic):
   for topic, message, t in record.read_messages(topics=message_topic):
     print("{}".format(message))
 
+# recover cmd
+def get_proto_desc(file_desc_proto_dict, proto_file_name, proto_desc):
+  file_desc_proto = file_desc_proto_dict[proto_file_name]
+  proto_desc.desc = file_desc_proto.SerializeToString()
+
+  for dep_proto_file_name in file_desc_proto.dependency:
+    depend = proto_desc.dependencies.add()
+    get_proto_desc(file_desc_proto_dict, dep_proto_file_name, depend)
+
+def cyber_record_recover(record_file, desc_file, topic="", msg_type=""):
+  # 1. read FileDescriptorSet from desc_file
+  desc_set = descriptor_pb2.FileDescriptorSet()
+  with open(desc_file, 'rb') as f:
+    desc_set.ParseFromString(f.read())
+
+  # 2. generate single_index
+  file_desc_proto_dict = {}
+  for file_desc_proto in desc_set.file:
+    logging.debug(file_desc_proto)
+    file_desc_proto_dict[file_desc_proto.name] = file_desc_proto
+
+  proto_desc = proto_desc_pb2.ProtoDesc()
+  proto_file_name = desc_set.file[-1].name
+  get_proto_desc(file_desc_proto_dict, proto_file_name, proto_desc)
+
+  # check msg_type
+  package = desc_set.file[-1].package
+  msg_types_in_proto = set()
+  logging.warn("msg_type should be:")
+  for message_type in desc_set.file[-1].message_type:
+    msg_types_in_proto.add("{}.{}".format(package, message_type.name))
+    logging.warn("\t{}.{}".format(package, message_type.name))
+
+  if msg_type and msg_type not in msg_types_in_proto:
+    logging.error("msg_type must in: {}".format(msg_types_in_proto))
+    return
+
+  single_index = record_pb2.SingleIndex()
+  single_index.type = record_pb2.SECTION_CHANNEL
+  single_index.channel_cache.name = topic
+  single_index.channel_cache.message_type = msg_type
+  single_index.channel_cache.proto_desc = proto_desc.SerializeToString()
+
+  # 3. recover_index
+  with Record(record_file, mode='m') as record:
+    record.recover_index(single_index)
+
 def display_usage():
   print("Usage: cyber_record <command> [<args>]")
   print("The cyber_record commands are:")
   print("\tinfo\tShow information of an exist record.")
   print("\techo\tPrint message to console.")
+  print("\trecover\tRecover record file.")
 
 def main(args=sys.argv):
   if len(args) <= 2:
@@ -88,11 +140,16 @@ def main(args=sys.argv):
 
   parser.add_argument(
     "-f", "--file", action="store", type=str, required=False,
-    nargs='?', const="0", help="cyber record file")
+    nargs='?', const="", help="cyber record file")
   parser.add_argument(
     "-t", "--topic", action="store", type=str, required=False,
-    nargs='?', const="0", help="cyber message topic")
-
+    nargs='?', const="", help="cyber message topic")
+  parser.add_argument(
+    "-m", "--msg_type", action="store", type=str, required=False,
+    nargs='?', const="", help="record message type")
+  parser.add_argument(
+    "-d", "--desc_file", action="store", type=str, required=False,
+    nargs='?', const="", help="record message file descriptor")
 
   func = args[1]
   args = parser.parse_args(args[2:])
@@ -100,5 +157,14 @@ def main(args=sys.argv):
     cyber_record_info(args.file)
   elif func == "echo":
     cyber_record_echo(args.file, args.topic)
+  elif func == "recover":
+    if args.topic and args.msg_type:
+      cyber_record_recover(args.file, args.desc_file, args.topic, args.msg_type)
+    elif args.topic:
+      cyber_record_recover(args.file, args.desc_file, topic=args.topic)
+    elif args.msg_type:
+      cyber_record_recover(args.file, args.desc_file, msg_type=args.msg_type)
+    else:
+      logging.error("Must add topic or msg_type!")
   else:
-    print("Unrecognized parameter type!")
+    logging.error("Unrecognized parameter type!")
