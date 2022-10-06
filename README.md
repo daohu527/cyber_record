@@ -68,9 +68,9 @@ from cyber_record.record import Record
 #### recover
 If you find record file is missing index, you can recover the file by `cyber_record recover`.
 
-*It is best to backup the file before recover!!!*
+**It is best to backup the file before recover!!!**
 
-1. Generate the file descriptor set.
+1. Generate the file descriptor set. Must be executed in the `apollo` directory.
  - `tmp` is the file name
  - `modules/drivers/proto/sensor_image.proto` the message define proto file
 ```
