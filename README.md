@@ -71,10 +71,18 @@ If you find record file is missing index, you can recover the file by `cyber_rec
 **It is best to backup the file before recover!!!**
 
 1. Generate the file descriptor set. Must be executed in the `apollo` directory.
- - `tmp` is the file name
+ - `descriptor_set_out` is the descriptor file name
  - `modules/drivers/proto/sensor_image.proto` the message define proto file
 ```
-protoc --include_imports --descriptor_set_out tmp modules/drivers/proto/sensor_image.proto
+protoc --include_imports --descriptor_set_out=tmp modules/drivers/proto/sensor_image.proto
+```
+
+or you can use absolute path.
+ - `descriptor_set_out` is the descriptor file name
+ - `proto_path` the apollo home path
+ - `/home/zero/01opencode/apollo/modules/drivers/proto/sensor_image.proto` proto file absolute path
+```
+protoc --include_imports --descriptor_set_out=tmp --proto_path=/home/zero/01opencode/apollo /home/zero/01opencode/apollo/modules/drivers/proto/sensor_image.proto
 ```
 
 2. Recover the record file.
