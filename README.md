@@ -12,6 +12,13 @@ pip3 install cyber_record
 pip3 install cyber_record -U
 ```
 
+If protobuf prompt requires python>=3.7, you can install python3.7+ and switch default python version
+```
+sudo apt install python3.8
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 2
+```
+
+
 ## Command line mode
 You can easily get the information in the record file by the following command.
 
