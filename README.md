@@ -11,13 +11,14 @@ pip3 install cyber_record
 // or update version
 pip3 install cyber_record -U
 ```
-
+#### python version
 If protobuf prompt requires python>=3.7, you can install python3.7+ and switch default python version
 ```
 sudo apt install python3.8
 sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 2
 ```
-
+#### demo record
+You can download a apollo demo record from [demo_sensor_data_for_vision](https://apollo-system.cdn.bcebos.com/dataset/6.0_edu/demo_sensor_data_for_vision.tar.xz)
 
 ## Command line mode
 You can easily get the information in the record file by the following command.
