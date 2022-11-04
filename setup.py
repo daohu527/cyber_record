@@ -1,11 +1,20 @@
 import setuptools
+import sys
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
+INSTALL_REQUIRES = []
+
+# ref: https://hynek.me/articles/conditional-python-dependencies/
+if sys.version_info[0:2] < (3, 7):
+    INSTALL_REQUIRES.append('protobuf<=3.19.4')
+else:
+    INSTALL_REQUIRES.append('protobuf>=3.17.0')
+
 setuptools.setup(
     name="cyber_record",
-    version="0.1.8",
+    version="0.1.9",
     author="daohu527",
     author_email="daohu527@gmail.com",
     description="Cyber record offline parse tool",
@@ -22,9 +31,7 @@ setuptools.setup(
     ],
     package_dir={"": "."},
     packages=setuptools.find_packages(where="."),
-    install_requires=[
-        'protobuf>=3.17.0',
-    ],
+    install_requires=INSTALL_REQUIRES,
     entry_points={
         'console_scripts': [
             'cyber_record = cyber_record.main:main',
