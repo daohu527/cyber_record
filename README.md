@@ -4,6 +4,14 @@
 
 **[cyber_record](https://cyber-record.readthedocs.io/en/latest/)** is a cyber record file offline parse tool. You can use `cyber_record` to read messages from record file, or write messages to the record file.
 
+| os      | support                 | remark |
+|---------|-------------------------|--------|
+| ubuntu  | :white_check_mark:      |        |
+| mac     | :white_check_mark:      |        |
+| windows | :ballot_box_with_check: |        |
+
+> I didn't strictly test if it works under windows. Hope you remind me to update the status if anyone has tested it
+
 ## Quick start
 First install "cyber_record" by the following command.
 ```sh
@@ -12,9 +20,11 @@ pip3 install cyber_record
 pip3 install cyber_record -U
 ```
 
-> Since the high-level protobuf version needs to regenerate the proto_pb file, we limit the version to 3.19.4
+> Since the high-level protobuf version needs to regenerate the proto_pb file, we limit protobuf version to 3.19.4
 
-#### demo record
+
+
+#### Demo record
 You can download a apollo demo record from [demo_sensor_data_for_vision](https://apollo-system.cdn.bcebos.com/dataset/6.0_edu/demo_sensor_data_for_vision.tar.xz)
 
 ## Command line mode
@@ -70,7 +80,7 @@ Or you can reference the `cyber_record` in the python file by
 from cyber_record.record import Record
 ```
 
-#### recover
+#### Recover
 If you find record file is missing index, you can recover the file by `cyber_record recover`.
 
 **It is best to backup the file before recover!!!**
