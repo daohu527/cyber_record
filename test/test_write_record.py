@@ -47,7 +47,7 @@ def write_image():
   write_file_name = "example_w.record.00002"
   with Record(write_file_name, mode='w') as record:
     img_path = 'test.jpg'
-    pb_image = image_builder.build(img_path, encoding='rgb8')
+    pb_image = image_builder.build(img_path, frame_id='camera', encoding='rgb8')
     record.write('/apollo/sensor/camera/front_6mm/image',
                  pb_image,
                  int(time.time() * 1e9))
@@ -58,7 +58,7 @@ def write_point_cloud():
   write_file_name = "example_w.record.00003"
   with Record(write_file_name, mode='w') as record:
     pcd_path = 'test.pcd'
-    pb_point_cloud = point_cloud_builder.build(pcd_path)
+    pb_point_cloud = point_cloud_builder.build(pcd_path, 'velodyne')
     record.write('/apollo/sensor/lidar32/compensator/PointCloud2',
                  pb_point_cloud,
                  int(time.time() * 1e9))
