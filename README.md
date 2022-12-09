@@ -6,11 +6,10 @@
 
 | os      | support                 | remark |
 |---------|-------------------------|--------|
-| ubuntu  | :white_check_mark:      |        |
-| mac     | :white_check_mark:      |        |
-| windows | :ballot_box_with_check: |        |
+| ubuntu  | :heavy_check_mark:      |        |
+| mac     | :heavy_check_mark:      |        |
+| windows | :heavy_check_mark:      |        |
 
-> I didn't strictly test if it works under windows. Hope you remind me to update the status if anyone has tested it
 
 ## Quick start
 First install "cyber_record" by the following command.
