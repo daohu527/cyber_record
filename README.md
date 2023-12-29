@@ -112,7 +112,7 @@ cyber_record recover -f broken.record -t /apollo/sensor/camera/front_6mm/image -
 Below are some examples to help you read and write messages from record files.
 
 ## 1. Read messages
-You can read messages directly from the record file in the following ways.
+You can read messages directly from the record file in the following ways. If you need to speed up reading, you can use the **Filter Read** below.
 ```python
 from cyber_record.record import Record
 
