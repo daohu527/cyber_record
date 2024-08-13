@@ -26,9 +26,9 @@ from cyber_record.cyber.proto import record_pb2, proto_desc_pb2
 from cyber_record.record import Record
 
 
-kGB = 1 << 30
-kMB = 1 << 20
-kKB = 1 << 10
+KGB = 1 << 30
+KMB = 1 << 20
+KKB = 1 << 10
 
 
 def cyber_record_info(record_file):
@@ -47,12 +47,12 @@ def cyber_record_info(record_file):
         (record.get_end_time() - record.get_start_time())/1e9))
 
     # size
-    if record.size > kGB:
-        print("size:        {:.2f} GByte".format(record.size/kGB))
-    elif record.size > kMB:
-        print("size:        {:.2f} MByte".format(record.size/kMB))
-    elif record.size > kKB:
-        print("size:        {:.2f} KByte".format(record.size/kKB))
+    if record.size > KGB:
+        print("size:        {:.2f} GByte".format(record.size/KGB))
+    elif record.size > KMB:
+        print("size:        {:.2f} MByte".format(record.size/KMB))
+    elif record.size > KKB:
+        print("size:        {:.2f} KByte".format(record.size/KKB))
     else:
         print("size:        {:.2f} Byte".format(record.size))
 
@@ -74,7 +74,7 @@ def cyber_record_echo(record_file, message_topic):
         return
 
     record = Record(record_file)
-    for topic, message, t in record.read_messages(topics=message_topic):
+    for _, message, _ in record.read_messages(topics=message_topic):
         print("{}".format(message))
 
 # recover cmd
@@ -108,10 +108,10 @@ def cyber_record_recover(record_file, desc_file, topic="", msg_type=""):
     # check msg_type
     package = desc_set.file[-1].package
     msg_types_in_proto = set()
-    logging.warn("msg_type should be:")
+    logging.warning("msg_type should be:")
     for message_type in desc_set.file[-1].message_type:
         msg_types_in_proto.add("{}.{}".format(package, message_type.name))
-        logging.warn("\t{}.{}".format(package, message_type.name))
+        logging.warning("\t{}.{}".format(package, message_type.name))
 
     if msg_type and msg_type not in msg_types_in_proto:
         logging.error("msg_type must in: {}".format(msg_types_in_proto))

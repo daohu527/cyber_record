@@ -66,7 +66,7 @@ class Reader:
                 name = single_index.channel_cache.name
                 self.channels[name] = single_index.channel_cache
             else:
-                logging.warn("Unknown Index type!")
+                logging.warning("Unknown Index type!")
 
         self._sort_chunk_indexs()
         logging.debug(index)
@@ -251,7 +251,7 @@ class Reader:
                 message_type = message_factory.MessageFactory().GetPrototype(descriptor)
                 self.message_type_pool.update({channel_name: message_type})
             else:
-                logging.warn("{} has no proto desc!".format(channel_name))
+                logging.warning("{} has no proto desc!".format(channel_name))
 
     def _create_message(self, single_message):
         message_type = self.message_type_pool.get(
