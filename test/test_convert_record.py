@@ -19,24 +19,25 @@ from cyber_record.record import Record
 
 
 def convert_record():
-  read_file_name = "test.record"
-  write_file_name = "out.record"
+    read_file_name = "test.record"
+    write_file_name = "out.record"
 
-  r_record = Record(read_file_name)
-  with Record(write_file_name, mode='w') as w_record:
-    for topic, message, t in r_record.read_messages_fallback():
-      # print("{}, {}, {}".format(topic, type(message), t))
-      if topic == '/apollo/sensor/camera/traffic/image_long':
-        message.header.frame_id = "camera_front_12mm"
-        message.frame_id = "camera_front_12mm"
-        w_record.write('/apollo/sensor/camera/front_12mm/image', message, t)
-      elif topic == '/apollo/sensor/camera/front_6mm/image':
-        message.header.frame_id = "camera_front_6mm"
-        message.frame_id = "camera_front_6mm"
-        w_record.write(topic, message, t)
-      else:
-        w_record.write(topic, message, t)
+    r_record = Record(read_file_name)
+    with Record(write_file_name, mode='w') as w_record:
+        for topic, message, t in r_record.read_messages_fallback():
+            # print("{}, {}, {}".format(topic, type(message), t))
+            if topic == '/apollo/sensor/camera/traffic/image_long':
+                message.header.frame_id = "camera_front_12mm"
+                message.frame_id = "camera_front_12mm"
+                w_record.write(
+                    '/apollo/sensor/camera/front_12mm/image', message, t)
+            elif topic == '/apollo/sensor/camera/front_6mm/image':
+                message.header.frame_id = "camera_front_6mm"
+                message.frame_id = "camera_front_6mm"
+                w_record.write(topic, message, t)
+            else:
+                w_record.write(topic, message, t)
 
 
 if __name__ == "__main__":
-  convert_record()
+    convert_record()

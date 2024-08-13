@@ -20,34 +20,35 @@ from cyber_record.record import Record
 
 file_name = "example.record.00000"
 
+
 def read_all():
-  record = Record(file_name)
-  for topic, message, t in record.read_messages_fallback():
-    print("{}, {}, {}".format(topic, type(message), t))
+    record = Record(file_name)
+    for topic, message, t in record.read_messages_fallback():
+        print("{}, {}, {}".format(topic, type(message), t))
 
 
 def read_filter_by_topic():
-  record = Record(file_name)
-  for topic, message, t in record.read_messages('/apollo/sensor/rs32/Scan'):
-    print("{}, {}, {}".format(topic, type(message), t))
+    record = Record(file_name)
+    for topic, message, t in record.read_messages('/apollo/sensor/rs32/Scan'):
+        print("{}, {}, {}".format(topic, type(message), t))
 
 
 def read_filter_by_time():
-  record = Record(file_name)
-  for topic, message, t in record.read_messages(start_time=1627031535164278940,\
-      end_time=1627031535215164773):
-    print("{}, {}, {}".format(topic, type(message), t))
+    record = Record(file_name)
+    for topic, message, t in record.read_messages(start_time=1627031535164278940,
+                                                  end_time=1627031535215164773):
+        print("{}, {}, {}".format(topic, type(message), t))
 
 
 def read_filter_by_both():
-  record = Record(file_name)
-  for topic, message, t in record.read_messages('/apollo/canbus/chassis', \
-      start_time=1627031535164278940, end_time=1627031535215164773):
-    print("{}, {}, {}".format(topic, type(message), t))
+    record = Record(file_name)
+    for topic, message, t in record.read_messages('/apollo/canbus/chassis',
+                                                  start_time=1627031535164278940, end_time=1627031535215164773):
+        print("{}, {}, {}".format(topic, type(message), t))
 
 
 if __name__ == "__main__":
-  read_all()
-  read_filter_by_topic()
-  read_filter_by_time()
-  read_filter_by_both()
+    read_all()
+    read_filter_by_topic()
+    read_filter_by_time()
+    read_filter_by_both()

@@ -31,14 +31,15 @@ RECORD_MINOR_VERSION = 0
 
 
 class Compression(Enum):
-  NONE = 'none'
-  BZ2  = 'bz2'
-  LZ4 = 'lz4'
+    NONE = 'none'
+    BZ2 = 'bz2'
+    LZ4 = 'lz4'
+
 
 class Section:
-  def __init__(self, section_type=None, data_size=0) -> None:
-    self.type = section_type
-    self.size = data_size
+    def __init__(self, section_type=None, data_size=0) -> None:
+        self.type = section_type
+        self.size = data_size
 
-  def __str__(self):
-    return "Section type: {}, size: {}".format(self.type, self.size)
+    def __str__(self):
+        return "Section type: {}, size: {}".format(self.type, self.size)
