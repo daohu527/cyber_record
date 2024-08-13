@@ -4,21 +4,22 @@ set -e
 
 sudo apt-get update
 
-# 安装 pip（如果未安装）
-echo "检查 pip 是否已安装..."
-if ! command -v pip &> /dev/null then
-    echo "pip 未安装。正在安装 pip..."
+# Install pip (if not installed)
+echo "Checking if pip is installed..."
+if ! command -v pip &> /dev/null
+then
+    echo "pip is not installed. Installing pip..."
     sudo apt-get install -y python3-pip
 fi
 
-# 安装 autopep8
-echo "正在安装 autopep8..."
+# Install autopep8
+echo "Installing autopep8..."
 pip3 install --user autopep8
 
-# 验证安装
+# Verify installation
 if command -v autopep8 &> /dev/null
 then
-    echo "autopep8 安装成功！"
+    echo "autopep8 install success!"
 else
-    echo "autopep8 安装失败，请检查错误信息。"
+    echo "autopep8 installation failed, please check the error message."
 fi

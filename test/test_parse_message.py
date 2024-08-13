@@ -22,58 +22,65 @@ from record_msg.parser import to_csv, ImageParser, PointCloudParser
 
 
 def parse_pose(pose):
-  '''
-  save pose to csv file
-  '''
-  line = to_csv([pose.header.timestamp_sec, pose.pose])
-  writer.writerow(line)
+    '''
+    save pose to csv file
+    '''
+    line = to_csv([pose.header.timestamp_sec, pose.pose])
+    writer.writerow(line)
+
 
 def parse_chassis(chassis):
-  pass
+    pass
+
 
 def parse_prediction(prediction):
-  pass
+    pass
+
 
 def parse_routing_response_history(routing_response_history):
-  pass
+    pass
+
 
 def parse_planning(planning):
-  pass
+    pass
+
 
 def parse_image(image):
-  image_parser.parse(image)
+    image_parser.parse(image)
+
 
 def parse_pointcloud(pointcloud):
-  pointcloud_parser.parse(message)
+    pointcloud_parser.parse(message)
+
 
 if __name__ == "__main__":
-  # csv
-  f = open("../tests/message.csv", 'w')
-  writer = csv.writer(f)
+    # csv
+    f = open("../tests/message.csv", 'w')
+    writer = csv.writer(f)
 
-  # bag
-  file_name = "example.record.00000"
-  record = Record(file_name)
+    # bag
+    file_name = "example.record.00000"
+    record = Record(file_name)
 
-  image_parser = ImageParser('../tests')
-  pointcloud_parser = PointCloudParser('../tests')
+    image_parser = ImageParser('../tests')
+    pointcloud_parser = PointCloudParser('../tests')
 
-  for topic, message, t in record.read_messages_fallback():
-    if topic == "/apollo/localization/pose":
-      parse_pose(message)
-    elif topic == "/apollo/canbus/chassis":
-      parse_chassis(message)
-    elif topic == "/apollo/prediction":
-      parse_prediction(message)
-    elif topic == "/apollo/routing_response_history":
-      parse_routing_response_history(message)
-    elif topic == "/apollo/planning":
-      parse_planning(message)
-    elif topic == "/apollo/sensor/camera/front_6mm/image":
-      parse_image(message)
-    elif topic == "/apollo/sensor/lidar32/compensator/PointCloud2":
-      parse_pointcloud(message)
-    else:
-      pass
+    for topic, message, t in record.read_messages_fallback():
+        if topic == "/apollo/localization/pose":
+            parse_pose(message)
+        elif topic == "/apollo/canbus/chassis":
+            parse_chassis(message)
+        elif topic == "/apollo/prediction":
+            parse_prediction(message)
+        elif topic == "/apollo/routing_response_history":
+            parse_routing_response_history(message)
+        elif topic == "/apollo/planning":
+            parse_planning(message)
+        elif topic == "/apollo/sensor/camera/front_6mm/image":
+            parse_image(message)
+        elif topic == "/apollo/sensor/lidar32/compensator/PointCloud2":
+            parse_pointcloud(message)
+        else:
+            pass
 
-  f.close()
+    f.close()

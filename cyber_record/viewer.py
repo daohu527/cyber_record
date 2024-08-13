@@ -16,8 +16,9 @@
 
 
 class Viewer:
-  '''
-  View of record
-  '''
-  def __init__(self) -> None:
-    pass
+    '''
+    View of record
+    '''
+
+    def __init__(self) -> None:
+        pass

@@ -16,8 +16,9 @@
 
 
 class Query:
-  '''
-  Query record file
-  '''
-  def __init__(self) -> None:
-    pass
+    '''
+    Query record file
+    '''
+
+    def __init__(self) -> None:
+        pass

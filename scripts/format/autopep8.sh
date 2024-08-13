@@ -22,6 +22,9 @@
 # Fail on error
 set -e
 
+CURR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+source "${CURR_DIR}/../common/base.sh"
+
 AUTOPEP8_CMD="autopep8"
 
 # Function to check if autopep8 is installed
