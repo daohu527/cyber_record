@@ -21,7 +21,7 @@ import os.path
 import time
 import logging
 
-from cyber_record.cyber.proto import record_pb2, proto_desc_pb2
+from cyber_record.cyber.proto import record_pb2
 
 from cyber_record.reader import Reader
 from cyber_record.writer import Writer
@@ -38,7 +38,7 @@ from cyber_record.common import (
 )
 
 
-class Record(object):
+class Record:
     """
     Serialize messages to and from a single file on disk using record format.
     """
@@ -217,7 +217,7 @@ class Record(object):
                     s_channel_cache.proto_desc = t_channel_cache.proto_desc
                     found = True
                     break
-                elif s_channel_cache.message_type == t_channel_cache.message_type:
+                if s_channel_cache.message_type == t_channel_cache.message_type:
                     if t_channel_cache.name:
                         s_channel_cache.name = t_channel_cache.name
                     s_channel_cache.proto_desc = t_channel_cache.proto_desc
