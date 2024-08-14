@@ -37,9 +37,22 @@ class Compression(Enum):
 
 
 class Section:
+    """_summary_
+    """
     def __init__(self, section_type=None, data_size=0) -> None:
+        """_summary_
+
+        Args:
+            section_type (_type_, optional): _description_. Defaults to None.
+            data_size (int, optional): _description_. Defaults to 0.
+        """
         self.type = section_type
         self.size = data_size
 
     def __str__(self):
-        return "Section type: {}, size: {}".format(self.type, self.size)
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
+        return f"Section type: {self.type}, size: {self.size}"

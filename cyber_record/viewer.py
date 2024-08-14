@@ -16,9 +16,9 @@
 
 
 class Viewer:
-    '''
-    View of record
-    '''
-
+    """_summary_
+    """
     def __init__(self) -> None:
+        """_summary_
+        """
         pass

@@ -25,9 +25,21 @@ from cyber_record.common import (
     Compression,
 )
 from cyber_record.file_object.chunk import Chunk
+from cyber_record.record_exception import RecordException
 
 
 def to_pb_compress(compression):
+    """_summary_
+
+    Args:
+        compression (_type_): _description_
+
+    Raises:
+        RecordException: Unsupported compression type
+
+    Returns:
+        _type_: _description_
+    """
     if compression == Compression.NONE:
         return record_pb2.COMPRESS_NONE
     elif compression == Compression.BZ2:
@@ -35,10 +47,16 @@ def to_pb_compress(compression):
     elif compression == Compression.LZ4:
         return record_pb2.COMPRESS_LZ4
     else:
-        raise Exception()
+        raise RecordException(f"Unsupported compression type: {compression}!")
 
 
 def get_proto_desc(file_descriptor, proto_desc):
+    """_summary_
+
+    Args:
+        file_descriptor (_type_): _description_
+        proto_desc (_type_): _description_
+    """
     file_desc_proto = descriptor_pb2.FileDescriptorProto()
     file_descriptor.CopyToProto(file_desc_proto)
     proto_desc.desc = file_desc_proto.SerializeToString()
@@ -49,7 +67,14 @@ def get_proto_desc(file_descriptor, proto_desc):
 
 
 class Writer():
+    """_summary_
+    """
     def __init__(self, bag) -> None:
+        """_summary_
+
+        Args:
+            bag (_type_): _description_
+        """
         self.bag = bag
 
         # private
@@ -64,6 +89,8 @@ class Writer():
         self.build_header()
 
     def build_header(self):
+        """_summary_
+        """
         self._header.major_version = self.bag._major_version
         self._header.minor_version = self.bag._minor_version
         self._header.compress = to_pb_compress(self.bag._compression)
@@ -73,6 +100,14 @@ class Writer():
         self._header.segment_raw_size = self.bag._segment_raw_size
 
     def write(self, topic, msg, t, proto_descriptor=None):
+        """_summary_
+
+        Args:
+            topic (_type_): _description_
+            msg (_type_): _description_
+            t (_type_): _description_
+            proto_descriptor (_type_, optional): _description_. Defaults to None.
+        """
         if self._header.begin_time == 0:
             self._header.begin_time = t
         self._header.end_time = t
@@ -102,12 +137,24 @@ class Writer():
         self._chunk.add_message(topic, msg, t)
 
     def set_header(self, header):
+        """_summary_
+
+        Args:
+            header (_type_): _description_
+        """
         self._header = header
 
     def write_header(self):
+        """_summary_
+        """
         self.write_proto_record(self._header)
 
     def reindex(self, index):
+        """_summary_
+
+        Args:
+            index (_type_): _description_
+        """
         if self._header.index_position:
             self._set_position(self._header.index_position)
             self.write_proto_record(index)
@@ -115,6 +162,15 @@ class Writer():
             logging.warning("Record header's index_position is 0!")
 
     def write_proto_record(self, proto_record):
+        """_summary_
+
+        Args:
+            proto_record (_type_): _description_
+
+        Raises:
+            Exception: _description_
+            Exception: _description_
+        """
         if isinstance(proto_record, record_pb2.Header):
             section_type = record_pb2.SECTION_HEADER
             self._set_position(0)
@@ -145,6 +201,8 @@ class Writer():
             self._header.size = self._cur_position()
 
     def flush(self):
+        """_summary_
+        """
         if not self._chunk.empty():
             chunk_header_position = self._cur_position()
             self.write_proto_record(self._chunk._proto_chunk_header)
@@ -158,6 +216,8 @@ class Writer():
             self._header.chunk_number += 1
 
     def close(self):
+        """_summary_
+        """
         self.flush()
         self.write_proto_record(self._index)
 
@@ -165,27 +225,46 @@ class Writer():
         self.write_header()
 
     def _add_channel(self, topic, msg, proto_desc):
+        """_summary_
+
+        Args:
+            topic (_type_): _description_
+            msg (_type_): _description_
+            proto_desc (_type_): _description_
+        """
         proto_channel = record_pb2.Channel()
         proto_channel.name = topic
-        proto_channel.message_type = '{}.{}'.format(
-            msg.DESCRIPTOR.file.package, type(msg).__name__)
+        proto_channel.message_type = f"{msg.DESCRIPTOR.file.package}.{type(msg).__name__}"
         proto_channel.proto_desc = proto_desc.SerializeToString()
         self.write_proto_record(proto_channel)
 
     def _add_channel_index(self, channel_position, topic, msg, proto_desc):
+        """_summary_
+
+        Args:
+            channel_position (_type_): _description_
+            topic (_type_): _description_
+            msg (_type_): _description_
+            proto_desc (_type_): _description_
+        """
         channel_index = self._index.indexes.add()
         channel_index.type = record_pb2.SECTION_CHANNEL
         channel_index.position = channel_position
         channel_index.channel_cache.message_number = 0
         channel_index.channel_cache.name = topic
-        channel_index.channel_cache.message_type = '{}.{}'.format(
-            msg.DESCRIPTOR.file.package, type(msg).__name__)
+        channel_index.channel_cache.message_type = f'{msg.DESCRIPTOR.file.package}.{type(msg).__name__}'
         channel_index.channel_cache.proto_desc = proto_desc.SerializeToString()
 
         # add to dict
         self._channel_indexs[topic] = channel_index.channel_cache
 
     def _add_chunk_header_index(self, chunk_header_position, proto_chunk_header):
+        """_summary_
+
+        Args:
+            chunk_header_position (_type_): _description_
+            proto_chunk_header (_type_): _description_
+        """
         chunk_header_index = self._index.indexes.add()
         chunk_header_index.type = record_pb2.SECTION_CHUNK_HEADER
         chunk_header_index.position = chunk_header_position
@@ -197,36 +276,85 @@ class Writer():
         chunk_header_cache.raw_size = proto_chunk_header.raw_size
 
     def _add_chunk_body_index(self, chunk_body_position, message_number):
+        """_summary_
+
+        Args:
+            chunk_body_position (_type_): _description_
+            message_number (_type_): _description_
+        """
         chunk_body_index = self._index.indexes.add()
         chunk_body_index.type = record_pb2.SECTION_CHUNK_BODY
         chunk_body_index.position = chunk_body_position
         chunk_body_index.chunk_body_cache.message_number = message_number
 
     def _need_split_chunk(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return (self._chunk.size() >= self._header.chunk_raw_size or
                 self._chunk.interval() >= self._header.chunk_interval)
 
     def _need_split_file(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return ((self._header.end_time - self._header.begin_time >=
                 self._header.segment_interval) or
                 (self._header.size >= self._header.segment_raw_size))
 
     def _new_channel(self, topic):
+        """_summary_
+
+        Args:
+            topic (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         return topic not in self._channel_indexs
 
     def _write_section(self, section):
+        """_summary_
+
+        Args:
+            section (_type_): _description_
+        """
         section_type = (section.type).to_bytes(8, byteorder='little')
         section_size = (section.size).to_bytes(8, byteorder='little')
         self._write(section_type + section_size)
 
     def _write(self, data):
+        """_summary_
+
+        Args:
+            data (_type_): _description_
+        """
         self.bag._file.write(data)
 
     def _set_position(self, position):
+        """_summary_
+
+        Args:
+            position (_type_): _description_
+        """
         self.bag._file.seek(position)
 
     def _cur_position(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return self.bag._file.tell()
 
     def _skip_size(self, data_size):
+        """_summary_
+
+        Args:
+            data_size (_type_): _description_
+        """
         self.bag._file.seek(data_size, 1)

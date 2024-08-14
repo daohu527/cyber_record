@@ -19,23 +19,39 @@ from cyber_record.cyber.proto import record_pb2
 
 
 class Chunk:
+    """_summary_
+    """
     def __init__(self) -> None:
+        """_summary_
+        """
         self._index = 0
         self._proto_chunk_header = record_pb2.ChunkHeader()
         self._proto_chunk_body = record_pb2.ChunkBody()
 
     def swap(self, proto_chunk_body):
+        """_summary_
+
+        Args:
+            proto_chunk_body (_type_): _description_
+        """
         self._index = 0
         self._proto_chunk_body = proto_chunk_body
         self._proto_chunk_header.message_number = len(
             proto_chunk_body.messages)
 
     def clear(self):
+        """_summary_
+        """
         self._index = 0
         self._proto_chunk_header = record_pb2.ChunkHeader()
         self._proto_chunk_body = record_pb2.ChunkBody()
 
     def next_message(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         if self._index >= self.num() or self._index < 0:
             return None
 
@@ -44,9 +60,22 @@ class Chunk:
         return message
 
     def end(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return self._index >= self.num()
 
     def add_message(self, topic, msg, t, raw=True):
+        """_summary_
+
+        Args:
+            topic (_type_): _description_
+            msg (_type_): _description_
+            t (_type_): _description_
+            raw (bool, optional): _description_. Defaults to True.
+        """
         if self._proto_chunk_header.begin_time == 0:
             self._proto_chunk_header.begin_time = t
         self._proto_chunk_header.end_time = t
@@ -60,14 +89,34 @@ class Chunk:
         self._proto_chunk_header.message_number += 1
 
     def empty(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return self.num() == 0
 
     def interval(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return (self._proto_chunk_header.end_time -
                 self._proto_chunk_header.begin_time)
 
     def size(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return self._proto_chunk_header.raw_size
 
     def num(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return self._proto_chunk_header.message_number

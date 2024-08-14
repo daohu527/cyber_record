@@ -26,7 +26,14 @@ from cyber_record.record_exception import RecordException
 
 
 class Reader:
+    """_summary_
+    """
     def __init__(self, bag) -> None:
+        """_summary_
+
+        Args:
+            bag (_type_): _description_
+        """
         self.bag = bag
         self.chunk_header_indexs = []
         self.chunk_body_indexs = []
@@ -39,19 +46,27 @@ class Reader:
         self.message_index = 0
 
     def _fill_header(self, header):
-        self.bag._version = "{}.{}".format(header.major_version,
-                                           header.minor_version)
+        """_summary_
+
+        Args:
+            header (_type_): _description_
+        """
+        self.bag._version = f"{header.major_version}.{header.minor_version}"
         self.bag._size = header.size
         self.bag._message_number = header.message_number
         self.bag._start_time = header.begin_time
         self.bag._end_time = header.end_time
 
     def _sort_chunk_indexs(self):
+        """_summary_
+        """
         self.sorted_chunk_indexs = sorted(
             zip(self.chunk_header_indexs, self.chunk_body_indexs),
             key=lambda x: x[0].chunk_header_cache.begin_time)
 
     def start_reading(self):
+        """_summary_
+        """
         header = self.read_header()
         self._fill_header(header)
         logging.debug(header)
@@ -76,9 +91,19 @@ class Reader:
         self._set_position(HEADER_LENGTH + SECTION_LENGTH)
 
     def reindex(self):
+        """_summary_
+        """
         pass
 
     def get_channel_cache(self, topic_filters):
+        """_summary_
+
+        Args:
+            topic_filters (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         filtered_channel_cache = []
         for channel_name in self.channels:
             if topic_filters is None or channel_name not in topic_filters:
@@ -86,12 +111,31 @@ class Reader:
         return filtered_channel_cache
 
     def _is_valid_topic(self, topic, topics):
+        """_summary_
+
+        Args:
+            topic (_type_): _description_
+            topics (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         if topics is None:
             return True
 
         return topic in set(topics)
 
     def _is_valid_time(self, cur_time, start_time, end_time):
+        """_summary_
+
+        Args:
+            cur_time (_type_): _description_
+            start_time (_type_): _description_
+            end_time (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         if start_time and cur_time < start_time:
             return False
         if end_time and cur_time > end_time:
@@ -99,6 +143,15 @@ class Reader:
         return True
 
     def _get_chunk_body_indexs(self, start_time, end_time):
+        """_summary_
+
+        Args:
+            start_time (_type_): _description_
+            end_time (_type_): _description_
+
+        Yields:
+            _type_: _description_
+        """
         for chunk_header_index, chunk_body_index in self.sorted_chunk_indexs:
             if start_time and \
                     chunk_header_index.chunk_header_cache.end_time < start_time:
@@ -111,6 +164,16 @@ class Reader:
             yield chunk_body_index
 
     def read_messages(self, topics, start_time, end_time):
+        """_summary_
+
+        Args:
+            topics (_type_): _description_
+            start_time (_type_): _description_
+            end_time (_type_): _description_
+
+        Yields:
+            _type_: _description_
+        """
         for chunk_body_index in self._get_chunk_body_indexs(start_time, end_time):
             logging.debug(chunk_body_index)
             proto_chunk_body = self.read_chunk_body(chunk_body_index.position)
@@ -139,6 +202,11 @@ class Reader:
             yield single_message.channel_name, proto_message, single_message.time
 
     def read_header(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         self._set_position(0)
 
         section = Section()
@@ -156,6 +224,14 @@ class Reader:
         return proto_header
 
     def read_index(self, header):
+        """_summary_
+
+        Args:
+            header (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         self._set_position(header.index_position)
 
         section = Section()
@@ -171,6 +247,14 @@ class Reader:
         return proto_index
 
     def read_chunk_header(self, position):
+        """_summary_
+
+        Args:
+            position (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         self._set_position(position)
 
         section = Section()
@@ -186,6 +270,14 @@ class Reader:
         return chunk_header
 
     def read_chunk_body(self, position):
+        """_summary_
+
+        Args:
+            position (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         self._set_position(position)
 
         section = Section()
@@ -201,12 +293,22 @@ class Reader:
         return chunk_body
 
     def _read_section(self, section):
+        """_summary_
+
+        Args:
+            section (_type_): _description_
+        """
         section.type = int.from_bytes(self._read(4), byteorder='little')
         self._skip_size(4)
         section.size = int.from_bytes(self._read(8), byteorder='little')
         logging.debug(section)
 
     def _read_next_chunk(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         while self.bag._file.tell() != self.bag._size:
             section = Section()
             self._read_section(section)
@@ -223,6 +325,11 @@ class Reader:
             return False
 
     def _add_dependency(self, proto_desc):
+        """_summary_
+
+        Args:
+            proto_desc (_type_): _description_
+        """
         if proto_desc is None or not proto_desc.desc:
             return
 
@@ -239,6 +346,8 @@ class Reader:
         logging.debug(file_desc_proto)
 
     def _create_message_type_pool(self):
+        """_summary_
+        """
         for channel_name, channel_cache in self.channels.items():
             proto_desc = proto_desc_pb2.ProtoDesc()
             proto_desc.ParseFromString(channel_cache.proto_desc)
@@ -251,9 +360,17 @@ class Reader:
                 message_type = message_factory.MessageFactory().GetPrototype(descriptor)
                 self.message_type_pool.update({channel_name: message_type})
             else:
-                logging.warning("{} has no proto desc!".format(channel_name))
+                logging.warning(f"{channel_name} has no proto desc!")
 
     def _create_message(self, single_message):
+        """_summary_
+
+        Args:
+            single_message (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         message_type = self.message_type_pool.get(
             single_message.channel_name, None)
 
@@ -265,22 +382,50 @@ class Reader:
         return proto_message
 
     def _read(self, size):
+        """_summary_
+
+        Args:
+            size (_type_): _description_
+
+        Raises:
+            RecordException: _description_
+
+        Returns:
+            _type_: _description_
+        """
         data = self.bag._file.read(size)
         if len(data) != size:
             raise RecordException(
-                'expecting {} bytes, read {}'.format(size, len(data)))
+                f'expecting {size} bytes, read {len(data)}')
         return data
 
     def _set_position(self, position):
+        """_summary_
+
+        Args:
+            position (_type_): _description_
+        """
         self.bag._file.seek(position)
 
     def _cur_position(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return self.bag._file.tell()
 
     def _skip_size(self, data_size):
+        """_summary_
+
+        Args:
+            data_size (_type_): _description_
+        """
         self.bag._file.seek(data_size, 1)
 
     def _skip_record(self):
+        """_summary_
+        """
         section = Section()
         self._read_section(section)
         self._skip_size(section.size)

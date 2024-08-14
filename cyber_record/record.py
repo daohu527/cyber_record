@@ -83,7 +83,7 @@ class Record:
         self._end_time = 0
 
         assert chunk_threshold >= MIN_CHUNK_SIZE, \
-            "chunk_threshold should large than {}".format(MIN_CHUNK_SIZE)
+            f"chunk_threshold should large than {MIN_CHUNK_SIZE}"
         self._chunk_threshold = chunk_threshold
 
         # config
@@ -95,7 +95,7 @@ class Record:
         allowed_compressions = set(item for item in Compression)
         if compression not in allowed_compressions:
             raise ValueError(
-                'compression must be one of: {}'.format(allowed_compressions))
+                f'compression must be one of: {allowed_compressions}')
         self._compression = compression
 
         self._reader = None
@@ -105,59 +105,134 @@ class Record:
         self._open(f, mode, allow_unindexed)
 
     def __iter__(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return self.read_messages()
 
     def __enter__(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        """_summary_
+
+        Args:
+            exc_type (_type_): _description_
+            exc_value (_type_): _description_
+            traceback (_type_): _description_
+        """
         self.close()
 
     @property
     def options(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return {'compression': self._compression,
                 'chunk_threshold': self._chunk_threshold}
 
     @property
     def filename(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return self._filename
 
     @property
     def version(self):
-        return "{}.{}".format(self._major_version, self._minor_version)
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
+        return f"{self._major_version}.{self._minor_version}"
 
     @property
     def mode(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return self._mode
 
     @property
     def size(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return self._size
 
     def _get_compression(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return self._compression
 
     def _set_compression(self, compression):
+        """_summary_
+
+        Args:
+            compression (_type_): _description_
+
+        Raises:
+            ValueError: _description_
+        """
         allowed_compressions = set(item.value for item in Compression)
         if compression not in allowed_compressions:
             raise ValueError(
-                'compression must be one of: {}'.format(allowed_compressions))
+                f'compression must be one of: {allowed_compressions}')
 
         self._compression = compression
 
     compression = property(_get_compression, _set_compression)
 
     def _get_chunk_threshold(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return self._chunk_threshold
 
     def _set_chunk_threshold(self, chunk_threshold):
+        """_summary_
+
+        Args:
+            chunk_threshold (_type_): _description_
+        """
         assert chunk_threshold >= MIN_CHUNK_SIZE, \
-            "chunk_threshold should large than {}".format(MIN_CHUNK_SIZE)
+            f"chunk_threshold should large than {MIN_CHUNK_SIZE}"
         self._chunk_threshold = chunk_threshold
 
     chunk_threshold = property(_get_chunk_threshold, _set_chunk_threshold)
 
     def read_messages(self, topics=None, start_time=None, end_time=None):
+        """_summary_
+
+        Args:
+            topics (_type_, optional): _description_. Defaults to None.
+            start_time (_type_, optional): _description_. Defaults to None.
+            end_time (_type_, optional): _description_. Defaults to None.
+
+        Returns:
+            _type_: _description_
+        """
         if topics and isinstance(topics, str):
             topics = [topics]
 
@@ -173,6 +248,19 @@ class Record:
         return self._reader.read_messages_fallback(topics, start_time, end_time)
 
     def write(self, topic, msg, t=None, proto_descriptor=None):
+        """_summary_
+
+        Args:
+            topic (_type_): _description_
+            msg (_type_): _description_
+            t (_type_, optional): _description_. Defaults to None.
+            proto_descriptor (_type_, optional): _description_. Defaults to None.
+
+        Raises:
+            ValueError: _description_
+            ValueError: _description_
+            ValueError: _description_
+        """
         if not self._file:
             raise ValueError('I/O operation on closed record')
 
@@ -199,6 +287,11 @@ class Record:
         pass
 
     def recover_index(self, single_index):
+        """_summary_
+
+        Args:
+            single_index (_type_): _description_
+        """
         header = self._reader.read_header()
         self._writer.set_header(header)
 
@@ -230,9 +323,7 @@ class Record:
                     and single_index.channel_cache.name:
                 index.indexes.append(single_index)
             else:
-                logging.error("Check topic: {} and meesage_type: {} is correct!".format(
-                    single_index.channel_cache.name,
-                    single_index.channel_cache.message_type,))
+                logging.error(f"Check topic: {single_index.channel_cache.name} and meesage_type: {single_index.channel_cache.message_type} is correct!")
                 return
 
         # write new index to record
@@ -241,6 +332,8 @@ class Record:
         print("Success recover index!")
 
     def close(self):
+        """_summary_
+        """
         if self._file:
             if self._mode in 'wa':
                 self._stop_writing()
@@ -248,6 +341,14 @@ class Record:
             self._close_file()
 
     def get_message_count(self, topic_filters=None):
+        """_summary_
+
+        Args:
+            topic_filters (_type_, optional): _description_. Defaults to None.
+
+        Returns:
+            _type_: _description_
+        """
         message_count = 0
 
         if topic_filters is not None:
@@ -260,35 +361,93 @@ class Record:
         return message_count
 
     def get_channel_cache(self, topic_filters=None):
+        """_summary_
+
+        Args:
+            topic_filters (_type_, optional): _description_. Defaults to None.
+
+        Returns:
+            _type_: _description_
+        """
         return self._reader.get_channel_cache(topic_filters)
 
     def get_start_time(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return self._start_time
 
     def get_end_time(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return self._end_time
 
     def set_encryptor(self, encryptor=None, param=None):
+        """_summary_
+
+        Args:
+            encryptor (_type_, optional): _description_. Defaults to None.
+            param (_type_, optional): _description_. Defaults to None.
+        """
         pass
 
     def __str__(self):
+        """_summary_
+        """
         pass
 
     # internal interface
 
     def _get_descriptors(self, topics=None, descriptor_filter=None):
+        """_summary_
+
+        Args:
+            topics (_type_, optional): _description_. Defaults to None.
+            descriptor_filter (_type_, optional): _description_. Defaults to None.
+        """
         pass
 
     def _get_entries(self, descriptors=None, start_time=None, end_time=None):
+        """_summary_
+
+        Args:
+            descriptors (_type_, optional): _description_. Defaults to None.
+            start_time (_type_, optional): _description_. Defaults to None.
+            end_time (_type_, optional): _description_. Defaults to None.
+        """
         pass
 
     def _get_entry(self, t, descriptors=None):
+        """_summary_
+
+        Args:
+            t (_type_): _description_
+            descriptors (_type_, optional): _description_. Defaults to None.
+        """
         pass
 
     def _clear_index(self):
+        """_summary_
+        """
         pass
 
     def _open(self, f, mode, allow_unindexed):
+        """_summary_
+
+        Args:
+            f (_type_): _description_
+            mode (_type_): _description_
+            allow_unindexed (_type_): _description_
+
+        Raises:
+            ValueError: _description_
+            Exception: _description_
+        """
         assert f is not None, "filename (or stream) is invalid"
 
         self._mode = mode
@@ -303,14 +462,27 @@ class Record:
             elif mode == 'm':
                 self._open_modify(f)
             else:
-                raise ValueError('mode {} is invalid'.format(mode))
+                raise ValueError(f'mode {mode} is invalid')
         except struct.error:
             raise Exception()
 
     def _is_file(self, f):
+        """_summary_
+
+        Args:
+            f (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         return isinstance(f, io.IOBase)
 
     def _open_read(self, f):
+        """_summary_
+
+        Args:
+            f (_type_): _description_
+        """
         if self._is_file(f):
             self._file = f
             self._filename = None
@@ -326,6 +498,11 @@ class Record:
             raise
 
     def _open_write(self, f):
+        """_summary_
+
+        Args:
+            f (_type_): _description_
+        """
         if self._is_file(f):
             self._file = f
             self._filename = None
@@ -341,6 +518,11 @@ class Record:
             raise
 
     def _open_append(self, f):
+        """_summary_
+
+        Args:
+            f (_type_): _description_
+        """
         if self._is_file(f):
             self._file = f
             self._filename = None
@@ -359,6 +541,11 @@ class Record:
             raise
 
     def _open_modify(self, f):
+        """_summary_
+
+        Args:
+            f (_type_): _description_
+        """
         if self._is_file(f):
             self._file = f
             self._filename = None
@@ -374,20 +561,32 @@ class Record:
             raise
 
     def _close_file(self):
+        """_summary_
+        """
         self._file.close()
         self._file = None
 
     def _create_reader(self):
+        """_summary_
+        """
         self._reader = Reader(self)
 
     def _create_writer(self):
+        """_summary_
+        """
         self._writer = Writer(self)
 
     def _start_writing(self):
+        """_summary_
+        """
         self._writer.write_header()
 
     def _start_appending(self):
+        """_summary_
+        """
         pass
 
     def _stop_writing(self):
+        """_summary_
+        """
         self._writer.close()
