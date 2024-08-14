@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Record chunk struct"""
 
 from cyber_record.cyber.proto import record_pb2
 
@@ -21,6 +22,7 @@ from cyber_record.cyber.proto import record_pb2
 class Chunk:
     """_summary_
     """
+
     def __init__(self) -> None:
         """_summary_
         """

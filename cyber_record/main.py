@@ -44,9 +44,11 @@ def cyber_record_info(record_file):
     record = Record(record_file)
     print(f"record_file: {record.filename}")
     print(f"version:     {record.version}")
-    print(f"begin_time:  {datetime.fromtimestamp(record.get_start_time()/1e9)}")
+    print(
+        f"begin_time:  {datetime.fromtimestamp(record.get_start_time()/1e9)}")
     print(f"end_time:    {datetime.fromtimestamp(record.get_end_time()/1e9)}")
-    print(f"duration:    {(record.get_end_time() - record.get_start_time())/1e9:.2f} s")
+    print(
+        f"duration:    {(record.get_end_time() - record.get_start_time())/1e9:.2f} s")
 
     # size
     if record.size > KGB:
@@ -64,7 +66,8 @@ def cyber_record_info(record_file):
     # Empty line
     print()
     for channel in record.get_channel_cache():
-        print(f"{channel.name:<38}, {channel.message_type:<38}, {channel.message_number}")
+        print(
+            f"{channel.name:<38}, {channel.message_type:<38}, {channel.message_number}")
 
 
 def cyber_record_echo(record_file, message_topic):

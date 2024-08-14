@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Record exception class"""
+
 
 class RecordException(Exception):
     """_summary_
@@ -21,4 +23,3 @@ class RecordException(Exception):
     Args:
         Exception (_type_): _description_
     """
-    pass

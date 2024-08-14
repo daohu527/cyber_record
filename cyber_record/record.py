@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Record struct"""
 
 import struct
 import io
@@ -323,7 +324,10 @@ class Record:
                     and single_index.channel_cache.name:
                 index.indexes.append(single_index)
             else:
-                logging.error(f"Check topic: {single_index.channel_cache.name} and meesage_type: {single_index.channel_cache.message_type} is correct!")
+                logging.error(
+                    f"Check topic: {single_index.channel_cache.name} and \
+                        meesage_type: {single_index.channel_cache.message_type}\
+                        is correct!")
                 return
 
         # write new index to record
@@ -394,12 +398,10 @@ class Record:
             encryptor (_type_, optional): _description_. Defaults to None.
             param (_type_, optional): _description_. Defaults to None.
         """
-        pass
 
     def __str__(self):
         """_summary_
         """
-        pass
 
     # internal interface
 
@@ -410,7 +412,6 @@ class Record:
             topics (_type_, optional): _description_. Defaults to None.
             descriptor_filter (_type_, optional): _description_. Defaults to None.
         """
-        pass
 
     def _get_entries(self, descriptors=None, start_time=None, end_time=None):
         """_summary_
@@ -420,7 +421,6 @@ class Record:
             start_time (_type_, optional): _description_. Defaults to None.
             end_time (_type_, optional): _description_. Defaults to None.
         """
-        pass
 
     def _get_entry(self, t, descriptors=None):
         """_summary_
@@ -429,12 +429,10 @@ class Record:
             t (_type_): _description_
             descriptors (_type_, optional): _description_. Defaults to None.
         """
-        pass
 
     def _clear_index(self):
         """_summary_
         """
-        pass
 
     def _open(self, f, mode, allow_unindexed):
         """_summary_
@@ -487,7 +485,7 @@ class Record:
             self._file = f
             self._filename = None
         else:
-            self._file = open(f, 'rb')
+            self._file = open(f, 'rb')  # pylint: disable=consider-using-with
             self._filename = f
 
         try:
@@ -507,7 +505,7 @@ class Record:
             self._file = f
             self._filename = None
         else:
-            self._file = open(f, 'w+b')
+            self._file = open(f, 'w+b')  # pylint: disable=consider-using-with
             self._filename = f
 
         try:
@@ -530,9 +528,11 @@ class Record:
             self._filename = f
             # if file exists
             if os.path.isfile(f):
-                self._file = open(f, 'r+b')
+                self._file = open(
+                    f, 'r+b')  # pylint: disable=consider-using-with
             else:
-                self._file = open(f, 'w+b')
+                self._file = open(
+                    f, 'w+b')  # pylint: disable=consider-using-with
 
         try:
             self._start_appending()
@@ -550,7 +550,7 @@ class Record:
             self._file = f
             self._filename = None
         else:
-            self._file = open(f, 'r+b')
+            self._file = open(f, 'r+b')  # pylint: disable=consider-using-with
             self._filename = f
 
         try:
@@ -584,7 +584,6 @@ class Record:
     def _start_appending(self):
         """_summary_
         """
-        pass
 
     def _stop_writing(self):
         """_summary_

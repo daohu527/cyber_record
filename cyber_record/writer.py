@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Writer class"""
+
 import logging
 
 from google.protobuf import descriptor_pb2
@@ -69,6 +71,7 @@ def get_proto_desc(file_descriptor, proto_desc):
 class Writer():
     """_summary_
     """
+
     def __init__(self, bag) -> None:
         """_summary_
 

@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Common functions"""
 
 from enum import Enum
 
@@ -31,6 +32,11 @@ RECORD_MINOR_VERSION = 0
 
 
 class Compression(Enum):
+    """_summary_
+
+    Args:
+        Enum (_type_): _description_
+    """
     NONE = 'none'
     BZ2 = 'bz2'
     LZ4 = 'lz4'
@@ -39,6 +45,7 @@ class Compression(Enum):
 class Section:
     """_summary_
     """
+
     def __init__(self, section_type=None, data_size=0) -> None:
         """_summary_
 

@@ -14,11 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Viewer class"""
+
 
 class Viewer:
     """_summary_
     """
+
     def __init__(self) -> None:
         """_summary_
         """
-        pass

@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Record reader class"""
 
 import logging
 
@@ -28,6 +29,7 @@ from cyber_record.record_exception import RecordException
 class Reader:
     """_summary_
     """
+
     def __init__(self, bag) -> None:
         """_summary_
 
@@ -93,7 +95,6 @@ class Reader:
     def reindex(self):
         """_summary_
         """
-        pass
 
     def get_channel_cache(self, topic_filters):
         """_summary_
@@ -105,9 +106,9 @@ class Reader:
             _type_: _description_
         """
         filtered_channel_cache = []
-        for channel_name in self.channels:
+        for channel_name, channel_cache in self.channels.items():
             if topic_filters is None or channel_name not in topic_filters:
-                filtered_channel_cache.append(self.channels[channel_name])
+                filtered_channel_cache.append(channel_cache)
         return filtered_channel_cache
 
     def _is_valid_topic(self, topic, topics):

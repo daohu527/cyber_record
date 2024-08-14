@@ -11,56 +11,52 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
-
-
 DESCRIPTOR = _descriptor.FileDescriptor(
-  name='cyber/proto/proto_desc.proto',
-  package='apollo.cyber.proto',
-  syntax='proto2',
-  serialized_options=None,
-  create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x1c\x63yber/proto/proto_desc.proto\x12\x12\x61pollo.cyber.proto\"N\n\tProtoDesc\x12\x0c\n\x04\x64\x65sc\x18\x01 \x01(\x0c\x12\x33\n\x0c\x64\x65pendencies\x18\x02 \x03(\x0b\x32\x1d.apollo.cyber.proto.ProtoDesc'
+    name='cyber/proto/proto_desc.proto',
+    package='apollo.cyber.proto',
+    syntax='proto2',
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+    serialized_pb=b'\n\x1c\x63yber/proto/proto_desc.proto\x12\x12\x61pollo.cyber.proto\"N\n\tProtoDesc\x12\x0c\n\x04\x64\x65sc\x18\x01 \x01(\x0c\x12\x33\n\x0c\x64\x65pendencies\x18\x02 \x03(\x0b\x32\x1d.apollo.cyber.proto.ProtoDesc'
 )
 
 
-
-
 _PROTODESC = _descriptor.Descriptor(
-  name='ProtoDesc',
-  full_name='apollo.cyber.proto.ProtoDesc',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='desc', full_name='apollo.cyber.proto.ProtoDesc.desc', index=0,
-      number=1, type=12, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"",
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='dependencies', full_name='apollo.cyber.proto.ProtoDesc.dependencies', index=1,
-      number=2, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto2',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=52,
-  serialized_end=130,
+    name='ProtoDesc',
+    full_name='apollo.cyber.proto.ProtoDesc',
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    create_key=_descriptor._internal_create_key,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name='desc', full_name='apollo.cyber.proto.ProtoDesc.desc', index=0,
+            number=1, type=12, cpp_type=9, label=1,
+            has_default_value=False, default_value=b"",
+            message_type=None, enum_type=None, containing_type=None,
+            is_extension=False, extension_scope=None,
+            serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+        _descriptor.FieldDescriptor(
+            name='dependencies', full_name='apollo.cyber.proto.ProtoDesc.dependencies', index=1,
+            number=2, type=11, cpp_type=10, label=3,
+            has_default_value=False, default_value=[],
+            message_type=None, enum_type=None, containing_type=None,
+            is_extension=False, extension_scope=None,
+            serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    ],
+    extensions=[
+    ],
+    nested_types=[],
+    enum_types=[
+    ],
+    serialized_options=None,
+    is_extendable=False,
+    syntax='proto2',
+    extension_ranges=[],
+    oneofs=[
+    ],
+    serialized_start=52,
+    serialized_end=130,
 )
 
 _PROTODESC.fields_by_name['dependencies'].message_type = _PROTODESC
@@ -68,10 +64,10 @@ DESCRIPTOR.message_types_by_name['ProtoDesc'] = _PROTODESC
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 ProtoDesc = _reflection.GeneratedProtocolMessageType('ProtoDesc', (_message.Message,), {
-  'DESCRIPTOR' : _PROTODESC,
-  '__module__' : 'cyber.proto.proto_desc_pb2'
-  # @@protoc_insertion_point(class_scope:apollo.cyber.proto.ProtoDesc)
-  })
+    'DESCRIPTOR': _PROTODESC,
+    '__module__': 'cyber.proto.proto_desc_pb2'
+    # @@protoc_insertion_point(class_scope:apollo.cyber.proto.ProtoDesc)
+})
 _sym_db.RegisterMessage(ProtoDesc)
 
 
