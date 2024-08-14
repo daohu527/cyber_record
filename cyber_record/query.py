@@ -16,9 +16,7 @@
 
 
 class Query:
-    '''
-    Query record file
-    '''
-
+    """_summary_
+    """
     def __init__(self) -> None:
         pass

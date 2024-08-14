@@ -16,5 +16,9 @@
 
 
 class RecordException(Exception):
-    def __init__(self) -> None:
-        pass
+    """_summary_
+
+    Args:
+        Exception (_type_): _description_
+    """
+    pass
