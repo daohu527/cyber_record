@@ -1,0 +1,175 @@
+{
+  // ——————————————————————
+  // Formatting rules
+  // ——————————————————————
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.eol": "\n",
+  // ——————————————————————
+  // Global Editor Experience (default fallback)
+  // ——————————————————————
+  "editor.tabSize": 2,
+  "editor.detectIndentation": false,
+  "editor.rulers": [
+    80,
+    120
+  ],
+  "editor.minimap.enabled": false,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": "active",
+  "editor.renderWhitespace": "boundary",
+  "editor.cursorSmoothCaretAnimation": "on",
+  "editor.smoothScrolling": true,
+  "editor.fontSize": 14,
+  // ——————————————————————
+  // File exclusions
+  // ——————————————————————
+  "files.exclude": {
+    "**/.DS_Store": true,
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/__pycache__": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true
+  },
+  // ——————————————————————
+  // Language-specific settings
+  // ——————————————————————
+  // JavaScript
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.rulers": [
+      80,
+      120
+    ]
+  },
+  // TypeScript
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.rulers": [
+      80,
+      120
+    ]
+  },
+  // JSON
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2
+  },
+  // Markdown
+  "[markdown]": {
+    "editor.wordWrap": "on",
+    "editor.quickSuggestions": {
+      "comments": "on",
+      "strings": "on",
+      "other": "on"
+    }
+  },
+  // Python (Black uses 88)
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true,
+    "editor.rulers": [
+      88
+    ]
+  },
+  // C++ (Google style, 80 char limit)
+  "[cpp]": {
+    "editor.defaultFormatter": "xaver.clang-format",
+    "editor.rulers": [
+      80
+    ]
+  },
+  // ——————————————————————
+  // ESLint
+  // ——————————————————————
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  // ——————————————————————
+  // Terminal
+  // ——————————————————————
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  // ——————————————————————
+  // TypeScript Import Handling
+  // ——————————————————————
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "files.associations": {
+    "vector": "cpp",
+    "__bit_reference": "cpp",
+    "__hash_table": "cpp",
+    "__locale": "cpp",
+    "__node_handle": "cpp",
+    "__split_buffer": "cpp",
+    "__threading_support": "cpp",
+    "__tree": "cpp",
+    "__verbose_abort": "cpp",
+    "array": "cpp",
+    "bitset": "cpp",
+    "cctype": "cpp",
+    "charconv": "cpp",
+    "cinttypes": "cpp",
+    "clocale": "cpp",
+    "cmath": "cpp",
+    "condition_variable": "cpp",
+    "csignal": "cpp",
+    "cstdarg": "cpp",
+    "cstddef": "cpp",
+    "cstdint": "cpp",
+    "cstdio": "cpp",
+    "cstdlib": "cpp",
+    "cstring": "cpp",
+    "ctime": "cpp",
+    "cwchar": "cpp",
+    "cwctype": "cpp",
+    "deque": "cpp",
+    "execution": "cpp",
+    "forward_list": "cpp",
+    "fstream": "cpp",
+    "future": "cpp",
+    "initializer_list": "cpp",
+    "iomanip": "cpp",
+    "ios": "cpp",
+    "iosfwd": "cpp",
+    "iostream": "cpp",
+    "istream": "cpp",
+    "limits": "cpp",
+    "list": "cpp",
+    "locale": "cpp",
+    "map": "cpp",
+    "mutex": "cpp",
+    "new": "cpp",
+    "optional": "cpp",
+    "ostream": "cpp",
+    "print": "cpp",
+    "queue": "cpp",
+    "ratio": "cpp",
+    "set": "cpp",
+    "sstream": "cpp",
+    "stack": "cpp",
+    "stdexcept": "cpp",
+    "streambuf": "cpp",
+    "string": "cpp",
+    "string_view": "cpp",
+    "tuple": "cpp",
+    "typeinfo": "cpp",
+    "unordered_map": "cpp",
+    "unordered_set": "cpp",
+    "variant": "cpp",
+    "algorithm": "cpp"
+  }
+}
