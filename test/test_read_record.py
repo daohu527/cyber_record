@@ -19,6 +19,14 @@ from cyber_record.record import Record
 
 
 file_name = "example.record.00000"
+# fallback to assets
+base_dir = __import__('os').path.dirname(__file__)
+assets = __import__('os').path.join(base_dir, 'assets')
+if not __import__('os').path.exists(file_name):
+    for cand in [__import__('os').path.join(assets, 'example.record.00000'), __import__('os').path.join(assets, 'example_w.record.00000')]:
+        if __import__('os').path.exists(cand):
+            file_name = cand
+            break
 
 
 def read_all():

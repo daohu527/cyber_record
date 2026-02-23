@@ -73,6 +73,38 @@ header {
 }
 ```
 
+## Testing
+
+Recommended steps to run tests locally:
+
+1. Create and activate a virtual environment:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+2. Update pip and install development dependencies from the project extras:
+
+```bash
+pip install -U pip
+pip install -e .[dev]
+```
+
+The `[dev]` extras install includes tools such as `build`, `setuptools`, `wheel`, and `pytest`.
+
+3. Run tests:
+
+```bash
+pytest -q
+```
+
+If you prefer not to use the extras, you can install the required dev tools individually, for example:
+
+```bash
+pip install -U build setuptools wheel pytest
+```
+
 
 Or you can reference the `cyber_record` in the python file by
 ```python

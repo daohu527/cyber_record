@@ -44,11 +44,9 @@ def cyber_record_info(record_file):
     record = Record(record_file)
     print(f"record_file: {record.filename}")
     print(f"version:     {record.version}")
-    print(
-        f"begin_time:  {datetime.fromtimestamp(record.get_start_time()/1e9)}")
+    print(f"begin_time:  {datetime.fromtimestamp(record.get_start_time()/1e9)}")
     print(f"end_time:    {datetime.fromtimestamp(record.get_end_time()/1e9)}")
-    print(
-        f"duration:    {(record.get_end_time() - record.get_start_time())/1e9:.2f} s")
+    print(f"duration:    {(record.get_end_time() - record.get_start_time())/1e9:.2f} s")
 
     # size
     if record.size > KGB:
@@ -67,7 +65,8 @@ def cyber_record_info(record_file):
     print()
     for channel in record.get_channel_cache():
         print(
-            f"{channel.name:<38}, {channel.message_type:<38}, {channel.message_number}")
+            f"{channel.name:<38}, {channel.message_type:<38}, {channel.message_number}"
+        )
 
 
 def cyber_record_echo(record_file, message_topic):
@@ -84,6 +83,7 @@ def cyber_record_echo(record_file, message_topic):
     record = Record(record_file)
     for _, message, _ in record.read_messages(topics=message_topic):
         print(f"{message}")
+
 
 # recover cmd
 
@@ -115,7 +115,7 @@ def cyber_record_recover(record_file, desc_file, topic="", msg_type=""):
     """
     # 1. read FileDescriptorSet from desc_file
     desc_set = descriptor_pb2.FileDescriptorSet()
-    with open(desc_file, 'rb') as f:
+    with open(desc_file, "rb") as f:
         desc_set.ParseFromString(f.read())
 
     # 2. generate single_index
@@ -147,13 +147,12 @@ def cyber_record_recover(record_file, desc_file, topic="", msg_type=""):
     single_index.channel_cache.proto_desc = proto_desc.SerializeToString()
 
     # 3. recover_index
-    with Record(record_file, mode='m') as record:
+    with Record(record_file, mode="m") as record:
         record.recover_index(single_index)
 
 
 def display_usage():
-    """_summary_
-    """
+    """_summary_"""
     print("Usage: cyber_record <command> [<args>]")
     print("The cyber_record commands are:")
     print("\tinfo\tShow information of an exist record.")
@@ -173,20 +172,49 @@ def main(args=sys.argv):
 
     parser = argparse.ArgumentParser(
         description="cyber_record is a cyber record file offline parse tool.",
-        prog="main.py")
+        prog="main.py",
+    )
 
     parser.add_argument(
-        "-f", "--file", action="store", type=str, required=False,
-        nargs='?', const="", help="cyber record file")
+        "-f",
+        "--file",
+        action="store",
+        type=str,
+        required=False,
+        nargs="?",
+        const="",
+        help="cyber record file",
+    )
     parser.add_argument(
-        "-t", "--topic", action="store", type=str, required=False,
-        nargs='?', const="", help="cyber message topic")
+        "-t",
+        "--topic",
+        action="store",
+        type=str,
+        required=False,
+        nargs="?",
+        const="",
+        help="cyber message topic",
+    )
     parser.add_argument(
-        "-m", "--msg_type", action="store", type=str, required=False,
-        nargs='?', const="", help="record message type")
+        "-m",
+        "--msg_type",
+        action="store",
+        type=str,
+        required=False,
+        nargs="?",
+        const="",
+        help="record message type",
+    )
     parser.add_argument(
-        "-d", "--desc_file", action="store", type=str, required=False,
-        nargs='?', const="", help="record message file descriptor")
+        "-d",
+        "--desc_file",
+        action="store",
+        type=str,
+        required=False,
+        nargs="?",
+        const="",
+        help="record message file descriptor",
+    )
 
     func = args[1]
     args = parser.parse_args(args[2:])
@@ -196,13 +224,11 @@ def main(args=sys.argv):
         cyber_record_echo(args.file, args.topic)
     elif func == "recover":
         if args.topic and args.msg_type:
-            cyber_record_recover(args.file, args.desc_file,
-                                 args.topic, args.msg_type)
+            cyber_record_recover(args.file, args.desc_file, args.topic, args.msg_type)
         elif args.topic:
             cyber_record_recover(args.file, args.desc_file, topic=args.topic)
         elif args.msg_type:
-            cyber_record_recover(args.file, args.desc_file,
-                                 msg_type=args.msg_type)
+            cyber_record_recover(args.file, args.desc_file, msg_type=args.msg_type)
         else:
             logging.error("Must add topic or msg_type!")
     else:

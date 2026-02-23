@@ -1,3 +1,45 @@
 [build-system]
 requires = ["setuptools>=42"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "cyber_record"
+version = "0.1.13"
+description = "Cyber record offline parse tool"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.6"
+
+authors = [ { name = "daohu527", email = "daohu527@gmail.com" } ]
+
+license = { text = "Apache Software License" }
+
+urls = { "Homepage" = "https://github.com/daohu527/cyber_record", "Bug Tracker" = "https://github.com/daohu527/cyber_record/issues" }
+
+classifiers = [
+	"Programming Language :: Python :: 3",
+	"License :: OSI Approved :: Apache Software License",
+	"Operating System :: OS Independent",
+]
+
+dependencies = [
+	"protobuf<=3.19.4",
+]
+
+[project.optional-dependencies]
+dev = [
+	"build",
+	"setuptools",
+	"wheel",
+	"pytest",
+	"numpy",
+	"record_msg",
+	"opencv-python",
+	"matplotlib",
+]
+
+[project.scripts]
+cyber_record = "cyber_record.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cyber_record*"]

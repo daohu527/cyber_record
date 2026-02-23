@@ -16,49 +16,64 @@
 
 
 import time
+import os
 
-from modules.map.proto import map_pb2
+from PIL import Image
+
+from modules.common_msgs.map_msgs import map_pb2
 from cyber_record.record import Record
 from record_msg.builder import ImageBuilder, PointCloudBuilder
+
+
+BASE_DIR = os.path.dirname(__file__)
+ASSETS_DIR = os.path.join(BASE_DIR, 'assets')
+os.makedirs(ASSETS_DIR, exist_ok=True)
 
 
 def write_message():
     pb_map = map_pb2.Map()
     pb_map.header.version = 'hello'.encode()
 
-    write_file_name = "example_w.record.00000"
+    write_file_name = os.path.join(ASSETS_DIR, "example_w.record.00000")
     with Record(write_file_name, mode='w') as record:
         record.write('/apollo/map', pb_map, int(time.time() * 1e9))
 
 
 def read_write_message():
-    read_file_name = "example.record.00000"
-    r_record = Record(read_file_name)
+    read_path = "example.record.00000"
+    # prefer assets location if moved
+    if not os.path.exists(read_path):
+        read_path = os.path.join(ASSETS_DIR, 'example.record.00000')
 
-    write_file_name = "example_w.record.00001"
-    with Record(write_file_name, mode='w') as w_record:
+    write_path = os.path.join(ASSETS_DIR, "example_w.record.00001")
+
+    if not os.path.exists(read_path):
+        print(f"Error: {read_path} not found.")
+        return
+
+    with Record(read_path) as r_record, Record(write_path, mode="w") as w_record:
         for topic, message, t in r_record.read_messages_fallback():
-            print("{}, {}, {}".format(topic, type(message), t))
+            print(f"Topic: {topic}, Type: {type(message)}, Time: {t}")
             w_record.write(topic, message, t)
 
 
 def write_image():
+    img_path = os.path.join(ASSETS_DIR, "test.jpg")
+    if not os.path.exists(img_path):
+        return
+
     image_builder = ImageBuilder()
-    write_file_name = "example_w.record.00002"
-    with Record(write_file_name, mode='w') as record:
-        img_path = 'test.jpg'
-        pb_image = image_builder.build(
-            img_path, frame_id='camera', encoding='rgb8')
-        record.write('/apollo/sensor/camera/front_6mm/image',
-                     pb_image,
-                     int(time.time() * 1e9))
+    out_path = os.path.join(ASSETS_DIR, "example_w.record.00002")
+    with Record(out_path, mode="w") as record:
+        pb_image = image_builder.build(img_path, frame_id="camera", encoding="rgb8")
+        record.write("/apollo/sensor/camera/front_6mm/image", pb_image)
 
 
 def write_point_cloud():
     point_cloud_builder = PointCloudBuilder()
-    write_file_name = "example_w.record.00003"
+    write_file_name = os.path.join(ASSETS_DIR, "example_w.record.00003")
     with Record(write_file_name, mode='w') as record:
-        pcd_path = 'test.pcd'
+        pcd_path = os.path.join(ASSETS_DIR, 'test.pcd')
         pb_point_cloud = point_cloud_builder.build(pcd_path, 'velodyne')
         record.write('/apollo/sensor/lidar32/compensator/PointCloud2',
                      pb_point_cloud,

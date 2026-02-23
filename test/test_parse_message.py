@@ -16,15 +16,16 @@
 
 
 import csv
+import os
 
 from cyber_record.record import Record
 from record_msg.parser import to_csv, ImageParser, PointCloudParser
 
 
-def parse_pose(pose):
-    '''
-    save pose to csv file
-    '''
+def parse_pose(pose, writer):
+    """
+    save pose to csv file using provided `writer`.
+    """
     line = to_csv([pose.header.timestamp_sec, pose.pose])
     writer.writerow(line)
 
@@ -49,38 +50,47 @@ def parse_image(image):
     image_parser.parse(image)
 
 
-def parse_pointcloud(pointcloud):
-    pointcloud_parser.parse(message)
-
-
 if __name__ == "__main__":
-    # csv
-    f = open("../tests/message.csv", 'w')
-    writer = csv.writer(f)
+    base_dir = os.path.dirname(__file__)
+    out_path = os.path.join(base_dir, 'message.csv')
 
     # bag
-    file_name = "example.record.00000"
+    assets = os.path.join(base_dir, 'assets')
+
+    candidates = [
+        os.path.join(assets, 'example.record.00000'),
+        os.path.join(assets, 'example_w.record.00000'),
+    ]
+
+    for cand in candidates:
+        if os.path.exists(cand):
+            file_name = cand
+            break
+    else:
+        raise FileNotFoundError(f"No record found in {assets}")
+    print(f"Using record: {file_name}", flush=True)
     record = Record(file_name)
 
-    image_parser = ImageParser('../tests')
-    pointcloud_parser = PointCloudParser('../tests')
+    image_parser = ImageParser("../tests")
+    pointcloud_parser = PointCloudParser("../right")
 
-    for topic, message, t in record.read_messages_fallback():
-        if topic == "/apollo/localization/pose":
-            parse_pose(message)
-        elif topic == "/apollo/canbus/chassis":
-            parse_chassis(message)
-        elif topic == "/apollo/prediction":
-            parse_prediction(message)
-        elif topic == "/apollo/routing_response_history":
-            parse_routing_response_history(message)
-        elif topic == "/apollo/planning":
-            parse_planning(message)
-        elif topic == "/apollo/sensor/camera/front_6mm/image":
-            parse_image(message)
-        elif topic == "/apollo/sensor/lidar32/compensator/PointCloud2":
-            parse_pointcloud(message)
+    with open(out_path, 'w', newline='') as f:
+        writer = csv.writer(f)
+
+        for topic, message, t in record.read_messages_fallback():
+            if topic == "/apollo/localization/pose":
+                parse_pose(message, writer)
+            elif topic == "/apollo/canbus/chassis":
+                parse_chassis(message)
+        # elif topic == "/apollo/prediction":
+        #     parse_prediction(message)
+        # elif topic == "/apollo/routing_response_history":
+        #     parse_routing_response_history(message)
+        # elif topic == "/apollo/planning":
+        #     parse_planning(message)
+        # elif topic == "/apollo/sensor/camera/front_6mm/image":
+        #     parse_image(message)
+        # elif topic == "/apollo/sensor/vanjeelidar/left_front/PointCloud2":
+        #     pointcloud_parser.parse(message, t)
         else:
             pass
-
-    f.close()
