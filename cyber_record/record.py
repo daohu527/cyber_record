@@ -58,7 +58,8 @@ class Record:
             f (_type_): _description_
             mode (str, optional): _description_. Defaults to 'r'.
             compression (_type_, optional): _description_. Defaults to Compression.NONE.
-            allow_unindexed (bool, optional): _description_. Defaults to False.
+            allow_unindexed (bool, optional): allow opening files with broken index
+                by falling back to section-scan metadata loading. Defaults to False.
 
         Raises:
             ValueError: _description_
@@ -241,12 +242,19 @@ class Record:
 
     def read_messages_fallback(self, topics=None, start_time=None, end_time=None):
         """
-        deprecated
+        deprecated: use read_messages_section_scan
+        """
+        return self.read_messages_section_scan(topics, start_time, end_time)
+
+    def read_messages_section_scan(self, topics=None, start_time=None, end_time=None):
+        """
+        Sequentially scan sections and read chunk bodies.
+        This mode does not depend on index->chunk position mapping.
         """
         if topics and isinstance(topics, str):
             topics = [topics]
 
-        return self._reader.read_messages_fallback(topics, start_time, end_time)
+        return self._reader.read_messages_section_scan(topics, start_time, end_time)
 
     def write(self, topic, msg, t=None, proto_descriptor=None):
         """_summary_
@@ -452,7 +460,7 @@ class Record:
 
         try:
             if mode == 'r':
-                self._open_read(f)
+                self._open_read(f, allow_unindexed)
             elif mode == 'w':
                 self._open_write(f)
             elif mode == 'a':
@@ -475,11 +483,12 @@ class Record:
         """
         return isinstance(f, io.IOBase)
 
-    def _open_read(self, f):
+    def _open_read(self, f, allow_unindexed=False):
         """_summary_
 
         Args:
             f (_type_): _description_
+            allow_unindexed (bool, optional): open by section scan if index is broken.
         """
         if self._is_file(f):
             self._file = f
@@ -490,7 +499,7 @@ class Record:
 
         try:
             self._create_reader()
-            self._reader.start_reading()
+            self._reader.start_reading(allow_unindexed=allow_unindexed)
         except:
             self._close_file()
             raise

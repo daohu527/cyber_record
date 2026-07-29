@@ -171,6 +171,14 @@ def read_filter_by_both():
     print("{}, {}, {}".format(topic, type(message), t))
 ```
 
+#### Section Scan Read (for broken index)
+If index-based reading fails, use section-scan mode:
+```python
+record = Record(file_name, allow_unindexed=True)
+for topic, message, t in record.read_messages_section_scan():
+  print("{}, {}, {}".format(topic, type(message), t))
+```
+
 
 ## 2. Parse messages
 To avoid introducing too many dependencies, you can save messages by `record_msg`.
@@ -263,3 +271,8 @@ def write_point_cloud():
                  pb_point_cloud,
                  int(time.time() * 1e9))
 ```
+
+## Future plan
+1. Keep optimizing current record read/write hot paths while preserving compatibility.
+2. Stabilize fallback workflows for broken-index and partially corrupted files.
+3. Format evolution track: add **record <-> MCAP** conversion first, then evaluate MCAP as a primary storage format after tooling/performance validation.

@@ -133,6 +133,18 @@ You can also read messages filtered by topics and time. This will improve the sp
          print("{}, {}, {}".format(topic, type(message), t))
 
 
+Section Scan Read
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+If index-based reading fails, you can use section-scan mode.
+
+.. code-block:: python
+   :linenos:
+
+   record = Record(file_name, allow_unindexed=True)
+   for topic, message, t in record.read_messages_section_scan():
+      print("{}, {}, {}".format(topic, type(message), t))
+
+
 Parse messages
 ----------------------------
 To avoid introducing too many dependencies, you can save messages by `record_msg`.

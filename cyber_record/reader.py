@@ -66,31 +66,75 @@ class Reader:
             zip(self.chunk_header_indexs, self.chunk_body_indexs),
             key=lambda x: x[0].chunk_header_cache.begin_time)
 
-    def start_reading(self):
+    def start_reading(self, allow_unindexed=False):
         """_summary_
         """
         header = self.read_header()
         self._fill_header(header)
         logging.debug(header)
 
-        index = self.read_index(header)
-        for single_index in index.indexes:
-            if single_index.type == record_pb2.SECTION_CHUNK_HEADER:
-                self.chunk_header_indexs.append(single_index)
-            elif single_index.type == record_pb2.SECTION_CHUNK_BODY:
-                self.chunk_body_indexs.append(single_index)
-            elif single_index.type == record_pb2.SECTION_CHANNEL:
-                name = single_index.channel_cache.name
-                self.channels[name] = single_index.channel_cache
-            else:
-                logging.warning("Unknown Index type!")
-
-        self._sort_chunk_indexs()
-        logging.debug(index)
+        try:
+            index = self.read_index(header)
+            if index is None:
+                raise RecordException("index section is invalid")
+            for single_index in index.indexes:
+                if single_index.type == record_pb2.SECTION_CHUNK_HEADER:
+                    self.chunk_header_indexs.append(single_index)
+                elif single_index.type == record_pb2.SECTION_CHUNK_BODY:
+                    self.chunk_body_indexs.append(single_index)
+                elif single_index.type == record_pb2.SECTION_CHANNEL:
+                    name = single_index.channel_cache.name
+                    self.channels[name] = single_index.channel_cache
+                else:
+                    logging.warning("Unknown Index type!")
+            self._sort_chunk_indexs()
+            logging.debug(index)
+        except Exception as err:
+            if not allow_unindexed:
+                raise
+            logging.warning("Read index failed, fallback to section scan: %s", err)
+            self.chunk_header_indexs = []
+            self.chunk_body_indexs = []
+            self.sorted_chunk_indexs = []
+            self.channels = {}
+            self._load_channels_from_sections()
 
         self._create_message_type_pool()
 
         self._set_position(HEADER_LENGTH + SECTION_LENGTH)
+
+    def _load_channels_from_sections(self):
+        """Load channel cache by scanning SECTION_CHANNEL blocks."""
+        self._set_position(HEADER_LENGTH + SECTION_LENGTH)
+        while self._cur_position() < self.bag._size:
+            section = Section()
+            try:
+                self._read_section(section)
+            except RecordException:
+                break
+
+            if section.type == record_pb2.SECTION_CHANNEL:
+                try:
+                    data = self._read(section.size)
+                except RecordException:
+                    break
+                channel = record_pb2.Channel()
+                channel.ParseFromString(data)
+                channel_cache = record_pb2.ChannelCache()
+                channel_cache.name = channel.name
+                channel_cache.message_type = channel.message_type
+                channel_cache.proto_desc = channel.proto_desc
+                self.channels[channel.name] = channel_cache
+            elif section.type in (
+                record_pb2.SECTION_CHUNK_HEADER,
+                record_pb2.SECTION_CHUNK_BODY,
+                record_pb2.SECTION_INDEX,
+            ):
+                self._skip_size(section.size)
+                if section.type == record_pb2.SECTION_CHUNK_BODY:
+                    break
+            else:
+                self._skip_size(section.size)
 
     def reindex(self):
         """_summary_
@@ -124,7 +168,7 @@ class Reader:
         if topics is None:
             return True
 
-        return topic in set(topics)
+        return topic in topics
 
     def _is_valid_time(self, cur_time, start_time, end_time):
         """_summary_
@@ -142,6 +186,12 @@ class Reader:
         if end_time and cur_time > end_time:
             return False
         return True
+
+    def _normalize_topics(self, topics):
+        """Convert topic filters to a hash set once for faster lookup."""
+        if topics is None:
+            return None
+        return set(topics)
 
     def _get_chunk_body_indexs(self, start_time, end_time):
         """_summary_
@@ -175,6 +225,11 @@ class Reader:
         Yields:
             _type_: _description_
         """
+        topics = self._normalize_topics(topics)
+        is_valid_topic = self._is_valid_topic
+        is_valid_time = self._is_valid_time
+        create_message = self._create_message
+
         for chunk_body_index in self._get_chunk_body_indexs(start_time, end_time):
             logging.debug(chunk_body_index)
             proto_chunk_body = self.read_chunk_body(chunk_body_index.position)
@@ -184,23 +239,85 @@ class Reader:
 
             while not self.chunk.end():
                 single_message = self.chunk.next_message()
-                if self._is_valid_topic(single_message.channel_name, topics) and \
-                   self._is_valid_time(single_message.time, start_time, end_time):
-                    proto_message = self._create_message(single_message)
+                if is_valid_topic(single_message.channel_name, topics) and \
+                   is_valid_time(single_message.time, start_time, end_time):
+                    proto_message = create_message(single_message)
                     yield single_message.channel_name, proto_message, single_message.time
 
     def read_messages_fallback(self, topics, start_time, end_time):
         """
-        deprecated
+        deprecated: use read_messages_section_scan
         """
-        while self.message_index < self.bag._message_number:
-            if self.chunk.end():
-                self._read_next_chunk()
+        return self.read_messages_section_scan(topics, start_time, end_time)
 
-            single_message = self.chunk.next_message()
-            proto_message = self._create_message(single_message)
-            self.message_index += 1
-            yield single_message.channel_name, proto_message, single_message.time
+    def read_messages_section_scan(self, topics, start_time, end_time):
+        """
+        Sequentially scan all sections and parse SECTION_CHUNK_BODY in-place.
+        Unlike read_messages, this does not rely on index chunk positions.
+        """
+        topics = self._normalize_topics(topics)
+        is_valid_topic = self._is_valid_topic
+        is_valid_time = self._is_valid_time
+        create_message = self._create_message
+
+        start_pos = HEADER_LENGTH + SECTION_LENGTH
+        self._set_position(start_pos)
+        self.chunk.clear()
+
+        cur = self._cur_position()
+        self.bag._file.seek(0, 2)
+        file_size = self.bag._file.tell()
+        self._set_position(cur)
+
+        skip_next_chunk_body = False
+
+        while self._cur_position() < file_size:
+            section = Section()
+            try:
+                self._read_section(section)
+            except RecordException:
+                break
+
+            if self._cur_position() + section.size > file_size:
+                break
+
+            if section.type == record_pb2.SECTION_CHUNK_HEADER:
+                try:
+                    data = self._read(section.size)
+                except RecordException:
+                    break
+                chunk_header = record_pb2.ChunkHeader()
+                chunk_header.ParseFromString(data)
+                if start_time and chunk_header.end_time < start_time:
+                    skip_next_chunk_body = True
+                elif end_time and chunk_header.begin_time > end_time:
+                    skip_next_chunk_body = True
+                else:
+                    skip_next_chunk_body = False
+            elif section.type == record_pb2.SECTION_CHUNK_BODY:
+                if skip_next_chunk_body:
+                    self._skip_size(section.size)
+                    skip_next_chunk_body = False
+                    continue
+
+                try:
+                    data = self._read(section.size)
+                except RecordException:
+                    break
+
+                proto_chunk_body = record_pb2.ChunkBody()
+                proto_chunk_body.ParseFromString(data)
+                self.chunk.swap(proto_chunk_body)
+                while not self.chunk.end():
+                    single_message = self.chunk.next_message()
+                    if single_message is None:
+                        break
+                    if is_valid_topic(single_message.channel_name, topics) and \
+                       is_valid_time(single_message.time, start_time, end_time):
+                        proto_message = create_message(single_message)
+                        yield single_message.channel_name, proto_message, single_message.time
+            else:
+                self._skip_size(section.size)
 
     def read_header(self):
         """_summary_
