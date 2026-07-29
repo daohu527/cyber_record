@@ -73,6 +73,20 @@ header {
 }
 ```
 
+#### Convert
+`cyber_record convert` converts between supported formats (`record -> record`, `record -> mcap`, `mcap -> record`).
+
+```shell
+cyber_record convert -f input.record -o output.record --from-format record --to-format record
+cyber_record convert -f input.record -o output.mcap --from-format record --to-format mcap
+cyber_record convert -f input.record -o output.mcap --from-format auto --to-format mcap
+cyber_record convert -f input.mcap -o output.record --from-format mcap --to-format record
+```
+
+> `record <-> mcap` conversion requires `mcap` package: `pip install mcap`.
+
+When conversion fails, CLI exits with non-zero code.
+
 ## Testing
 
 Recommended steps to run tests locally:

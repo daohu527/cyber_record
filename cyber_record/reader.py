@@ -20,7 +20,12 @@ import logging
 
 from google.protobuf import message_factory, descriptor_pb2, descriptor_pool
 
-from cyber_record.common import Section, SECTION_LENGTH, HEADER_LENGTH
+from cyber_record.common import (
+    Compression,
+    Section,
+    SECTION_LENGTH,
+    HEADER_LENGTH,
+)
 from cyber_record.cyber.proto import record_pb2, proto_desc_pb2
 from cyber_record.file_object.chunk import Chunk
 from cyber_record.record_exception import RecordException
@@ -58,6 +63,17 @@ class Reader:
         self.bag._message_number = header.message_number
         self.bag._start_time = header.begin_time
         self.bag._end_time = header.end_time
+        self.bag._chunk_interval = header.chunk_interval
+        self.bag._segment_interval = header.segment_interval
+        self.bag._chunk_raw_size = header.chunk_raw_size
+        self.bag._segment_raw_size = header.segment_raw_size
+        self.bag._chunk_threshold = header.chunk_raw_size
+        if header.compress == record_pb2.COMPRESS_BZ2:
+            self.bag._compression = Compression.BZ2
+        elif header.compress == record_pb2.COMPRESS_LZ4:
+            self.bag._compression = Compression.LZ4
+        else:
+            self.bag._compression = Compression.NONE
 
     def _sort_chunk_indexs(self):
         """_summary_

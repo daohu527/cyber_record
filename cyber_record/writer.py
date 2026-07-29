@@ -129,15 +129,44 @@ class Writer():
                 proto_descriptor = proto_desc
 
             channel_position = self._cur_position()
-            self._add_channel(topic, msg, proto_descriptor)
+            self._add_channel(
+                topic=topic,
+                message_type=f"{msg.DESCRIPTOR.file.package}.{type(msg).__name__}",
+                proto_desc=proto_descriptor,
+            )
             self._add_channel_index(
-                channel_position, topic, msg, proto_descriptor)
+                channel_position=channel_position,
+                topic=topic,
+                message_type=f"{msg.DESCRIPTOR.file.package}.{type(msg).__name__}",
+                proto_desc=proto_descriptor,
+            )
             self._header.channel_number += 1
 
         # channel_cache.message_number
         self._channel_indexs[topic].message_number += 1
 
         self._chunk.add_message(topic, msg, t)
+
+    def write_raw(self, topic, raw_msg, t, message_type, proto_desc):
+        """Write serialized payload directly with explicit channel metadata."""
+        if self._header.begin_time == 0:
+            self._header.begin_time = t
+        self._header.end_time = t
+        self._header.message_number += 1
+
+        if self._need_split_chunk():
+            self.flush()
+            self._chunk.clear()
+            self._header.chunk_number += 1
+
+        if self._new_channel(topic):
+            channel_position = self._cur_position()
+            self._add_channel(topic, message_type, proto_desc)
+            self._add_channel_index(channel_position, topic, message_type, proto_desc)
+            self._header.channel_number += 1
+
+        self._channel_indexs[topic].message_number += 1
+        self._chunk.add_message(topic, raw_msg, t, raw=True)
 
     def set_header(self, header):
         """_summary_
@@ -227,35 +256,46 @@ class Writer():
         self._header.is_complete = True
         self.write_header()
 
-    def _add_channel(self, topic, msg, proto_desc):
+    def _normalize_proto_desc(self, proto_desc):
+        if isinstance(proto_desc, proto_desc_pb2.ProtoDesc):
+            return proto_desc
+        if isinstance(proto_desc, (bytes, bytearray)):
+            desc = proto_desc_pb2.ProtoDesc()
+            desc.ParseFromString(bytes(proto_desc))
+            return desc
+        raise TypeError("proto_desc must be ProtoDesc or bytes")
+
+    def _add_channel(self, topic, message_type, proto_desc):
         """_summary_
 
         Args:
             topic (_type_): _description_
-            msg (_type_): _description_
+            message_type (_type_): _description_
             proto_desc (_type_): _description_
         """
+        proto_desc = self._normalize_proto_desc(proto_desc)
         proto_channel = record_pb2.Channel()
         proto_channel.name = topic
-        proto_channel.message_type = f"{msg.DESCRIPTOR.file.package}.{type(msg).__name__}"
+        proto_channel.message_type = message_type
         proto_channel.proto_desc = proto_desc.SerializeToString()
         self.write_proto_record(proto_channel)
 
-    def _add_channel_index(self, channel_position, topic, msg, proto_desc):
+    def _add_channel_index(self, channel_position, topic, message_type, proto_desc):
         """_summary_
 
         Args:
             channel_position (_type_): _description_
             topic (_type_): _description_
-            msg (_type_): _description_
+            message_type (_type_): _description_
             proto_desc (_type_): _description_
         """
+        proto_desc = self._normalize_proto_desc(proto_desc)
         channel_index = self._index.indexes.add()
         channel_index.type = record_pb2.SECTION_CHANNEL
         channel_index.position = channel_position
         channel_index.channel_cache.message_number = 0
         channel_index.channel_cache.name = topic
-        channel_index.channel_cache.message_type = f'{msg.DESCRIPTOR.file.package}.{type(msg).__name__}'
+        channel_index.channel_cache.message_type = message_type
         channel_index.channel_cache.proto_desc = proto_desc.SerializeToString()
 
         # add to dict

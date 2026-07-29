@@ -26,11 +26,15 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+mcap = [
+	"mcap",
+]
 dev = [
 	"build",
 	"setuptools",
 	"wheel",
 	"pytest",
+	"mcap",
 	"numpy",
 	"record_msg",
 	"opencv-python",

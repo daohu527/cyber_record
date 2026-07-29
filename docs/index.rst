@@ -14,6 +14,9 @@ cyber_record
    :maxdepth: 4
    :hidden:
 
+   record_vs_mcap
+   implementation_plan
+
 
 Quick start
 ========================================
@@ -80,6 +83,22 @@ Echo
       module_name: "SimControl"
       sequence_num: 76636
    }
+
+
+Convert
+----------------------------------------
+`cyber_record convert` converts between supported formats.
+
+.. code-block:: sh
+   :linenos:
+
+   cyber_record convert -f input.record -o output.record --from-format record --to-format record
+   cyber_record convert -f input.record -o output.mcap --from-format record --to-format mcap
+   cyber_record convert -f input.record -o output.mcap --from-format auto --to-format mcap
+   cyber_record convert -f input.mcap -o output.record --from-format mcap --to-format record
+
+``record <-> mcap`` conversion requires ``mcap`` package.
+Conversion failures return non-zero exit code.
 
 
 Or you can reference `cyber_record` by

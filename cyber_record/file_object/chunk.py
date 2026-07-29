@@ -69,7 +69,7 @@ class Chunk:
         """
         return self._index >= self.num()
 
-    def add_message(self, topic, msg, t, raw=True):
+    def add_message(self, topic, msg, t, raw=False):
         """_summary_
 
         Args:
@@ -82,10 +82,17 @@ class Chunk:
             self._proto_chunk_header.begin_time = t
         self._proto_chunk_header.end_time = t
 
+        if raw:
+            if not isinstance(msg, (bytes, bytearray)):
+                raise TypeError("raw message must be bytes or bytearray")
+            content = bytes(msg)
+        else:
+            content = msg.SerializeToString()
+
         message = self._proto_chunk_body.messages.add()
         message.channel_name = topic
         message.time = t
-        message.content = msg.SerializeToString()
+        message.content = content
 
         self._proto_chunk_header.raw_size += len(message.content)
         self._proto_chunk_header.message_number += 1

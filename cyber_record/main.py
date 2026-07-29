@@ -23,6 +23,7 @@ from datetime import datetime
 from google.protobuf import descriptor_pb2
 
 from cyber_record.cyber.proto import record_pb2, proto_desc_pb2
+from cyber_record.converter import convert_file
 from cyber_record.record import Record
 
 
@@ -158,6 +159,41 @@ def display_usage():
     print("\tinfo\tShow information of an exist record.")
     print("\techo\tPrint message to console.")
     print("\trecover\tRecover record file.")
+    print("\tconvert\tConvert between supported formats.")
+
+
+def cyber_record_convert(
+    input_file,
+    output_file,
+    from_format,
+    to_format,
+    topic=None,
+    start_time=None,
+    end_time=None,
+    allow_unindexed=False,
+):
+    if not input_file or not output_file:
+        print("Usage: cyber_record convert -f input.record -o output.record")
+        return 1
+    try:
+        result = convert_file(
+            input_file=input_file,
+            output_file=output_file,
+            from_format=from_format,
+            to_format=to_format,
+            topics=topic,
+            start_time=start_time,
+            end_time=end_time,
+            allow_unindexed=allow_unindexed,
+        )
+    except (ImportError, ValueError, NotImplementedError) as err:
+        logging.error("convert failed: %s", err)
+        return 1
+    print(
+        f"converted={result['converted']}, skipped={result['skipped']}, "
+        f"source_messages={result['source_messages']}, output_messages={result['output_messages']}"
+    )
+    return 0
 
 
 def main(args=sys.argv):
@@ -215,6 +251,51 @@ def main(args=sys.argv):
         const="",
         help="record message file descriptor",
     )
+    parser.add_argument(
+        "-o",
+        "--output",
+        action="store",
+        type=str,
+        required=False,
+        nargs="?",
+        const="",
+        help="output file for convert command",
+    )
+    parser.add_argument(
+        "--from-format",
+        action="store",
+        type=str,
+        default="record",
+        choices=["auto", "record", "mcap"],
+        help="source format",
+    )
+    parser.add_argument(
+        "--to-format",
+        action="store",
+        type=str,
+        default="record",
+        choices=["record", "mcap"],
+        help="target format",
+    )
+    parser.add_argument(
+        "--start-time",
+        action="store",
+        type=int,
+        required=False,
+        help="filter start time in ns (convert)",
+    )
+    parser.add_argument(
+        "--end-time",
+        action="store",
+        type=int,
+        required=False,
+        help="filter end time in ns (convert)",
+    )
+    parser.add_argument(
+        "--allow-unindexed",
+        action="store_true",
+        help="allow section-scan open when index is broken",
+    )
 
     func = args[1]
     args = parser.parse_args(args[2:])
@@ -231,5 +312,20 @@ def main(args=sys.argv):
             cyber_record_recover(args.file, args.desc_file, msg_type=args.msg_type)
         else:
             logging.error("Must add topic or msg_type!")
+            raise SystemExit(1)
+    elif func == "convert":
+        code = cyber_record_convert(
+            input_file=args.file,
+            output_file=args.output,
+            from_format=args.from_format,
+            to_format=args.to_format,
+            topic=args.topic,
+            start_time=args.start_time,
+            end_time=args.end_time,
+            allow_unindexed=args.allow_unindexed,
+        )
+        if code != 0:
+            raise SystemExit(code)
     else:
         logging.error("Unrecognized parameter type!")
+        raise SystemExit(1)

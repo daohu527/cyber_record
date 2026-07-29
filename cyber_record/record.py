@@ -291,6 +291,32 @@ class Record:
 
         self._writer.write(topic, msg, t, proto_descriptor)
 
+    def write_raw(self, topic, raw_msg, message_type, proto_desc, t=None):
+        """Write serialized payload with explicit channel metadata."""
+        if not self._file:
+            raise ValueError('I/O operation on closed record')
+        if not topic:
+            raise ValueError('topic is invalid')
+        if not raw_msg:
+            raise ValueError('raw_msg is invalid')
+        if not message_type:
+            raise ValueError('message_type is invalid')
+        if proto_desc is None:
+            raise ValueError('proto_desc is invalid')
+
+        if t is None:
+            time_ns = getattr(time, "time_ns", None)
+            if callable(time_ns):
+                t = time.time_ns()
+            else:
+                t = int(time.time() * 1e9)
+
+        if self._writer._need_split_file():
+            # Todo(zero): need replace file handle, we don't support yet!
+            pass
+
+        self._writer.write_raw(topic, raw_msg, t, message_type, proto_desc)
+
     def reindex(self):
         # todo(zero): Reindex, modify chunkinfo and descriptor
         pass
@@ -406,6 +432,28 @@ class Record:
             encryptor (_type_, optional): _description_. Defaults to None.
             param (_type_, optional): _description_. Defaults to None.
         """
+
+    def set_write_header_options(
+        self,
+        chunk_interval=None,
+        segment_interval=None,
+        chunk_raw_size=None,
+        segment_raw_size=None,
+    ):
+        """Override writer header options in write mode before first flush."""
+        if self._mode not in ("w", "a"):
+            raise ValueError("set_write_header_options only valid in write/append mode")
+        if self._writer is None:
+            raise ValueError("writer is not initialized")
+        header = self._writer._header
+        if chunk_interval is not None:
+            header.chunk_interval = int(chunk_interval)
+        if segment_interval is not None:
+            header.segment_interval = int(segment_interval)
+        if chunk_raw_size is not None:
+            header.chunk_raw_size = int(chunk_raw_size)
+        if segment_raw_size is not None:
+            header.segment_raw_size = int(segment_raw_size)
 
     def __str__(self):
         """_summary_
