@@ -19,6 +19,11 @@ pip3 install cyber_record
 pip3 install cyber_record -U
 ```
 
+If you need `record <-> mcap` conversion, install optional dependency:
+```sh
+pip3 install mcap
+```
+
 > Since the high-level protobuf version needs to regenerate the proto_pb file, we limit protobuf version to 3.19.4
 
 
@@ -79,8 +84,11 @@ header {
 ```shell
 cyber_record convert -f input.record -o output.record --from-format record --to-format record
 cyber_record convert -f input.record -o output.mcap --from-format record --to-format mcap
-cyber_record convert -f input.record -o output.mcap --from-format auto --to-format mcap
+cyber_record convert -f input.mcap -o output.record --from-format auto --to-format record
 cyber_record convert -f input.mcap -o output.record --from-format mcap --to-format record
+cyber_record convert -f broken.record -o output.mcap --from-format record --to-format mcap --allow-unindexed
+cyber_record convert -f input.record -o window.mcap --from-format record --to-format mcap \
+  --topic /apollo/canbus/chassis --start-time 1627031535164278940 --end-time 1627031535215164773
 ```
 
 > `record <-> mcap` conversion requires `mcap` package: `pip install mcap`.
@@ -102,7 +110,7 @@ source .venv/bin/activate
 
 ```bash
 pip install -U pip
-pip install -e .[dev]
+pip install -e .[dev,mcap]
 ```
 
 The `[dev]` extras install includes tools such as `build`, `setuptools`, `wheel`, and `pytest`.
@@ -116,7 +124,14 @@ pytest -q
 If you prefer not to use the extras, you can install the required dev tools individually, for example:
 
 ```bash
-pip install -U build setuptools wheel pytest
+pip install -U build setuptools wheel pytest mcap
+```
+
+## Benchmark
+Run conversion benchmark (time + peak memory):
+```bash
+PYTHONPATH=. PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
+python3 scripts/benchmark_conversion.py -f test/assets/example.record.00000 --repeat 3
 ```
 
 
@@ -287,6 +302,6 @@ def write_point_cloud():
 ```
 
 ## Future plan
-1. Keep optimizing current record read/write hot paths while preserving compatibility.
-2. Stabilize fallback workflows for broken-index and partially corrupted files.
-3. Format evolution track: add **record <-> MCAP** conversion first, then evaluate MCAP as a primary storage format after tooling/performance validation.
+1. Preserve additional metadata coverage in `record <-> mcap` conversion.
+2. Add unified backend reader abstraction with automatic format routing.
+3. Extend benchmark and CI matrix with larger real-world datasets.
