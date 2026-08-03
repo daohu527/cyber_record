@@ -491,7 +491,7 @@ class Reader:
                 logging.debug(channel_cache.message_type)
                 descriptor = self.desc_pool.FindMessageTypeByName(
                     channel_cache.message_type)
-                message_type = message_factory.MessageFactory().GetPrototype(descriptor)
+                message_type = message_factory.GetMessageClass(descriptor)
                 self.message_type_pool.update({channel_name: message_type})
             else:
                 logging.warning(f"{channel_name} has no proto desc!")

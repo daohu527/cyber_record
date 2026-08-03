@@ -7,7 +7,7 @@ name = "cyber_record"
 version = "0.1.13"
 description = "Cyber record offline parse tool"
 readme = { file = "README.md", content-type = "text/markdown" }
-requires-python = ">=3.6"
+requires-python = ">=3.8"
 
 authors = [ { name = "daohu527", email = "daohu527@gmail.com" } ]
 
@@ -22,12 +22,20 @@ classifiers = [
 ]
 
 dependencies = [
-	"protobuf<=3.19.4",
+	"protobuf>=5.29.0,<6",
 ]
 
 [project.optional-dependencies]
 mcap = [
 	"mcap",
+]
+msgs = [
+	"wheelos-msgs>=0.1.5",
+]
+msg-tools = [
+	"numpy",
+	"Pillow",
+	"python-lzf",
 ]
 dev = [
 	"build",
@@ -36,9 +44,10 @@ dev = [
 	"pytest",
 	"mcap",
 	"numpy",
-	"record_msg",
-	"opencv-python",
+	"Pillow",
+	"python-lzf",
 	"matplotlib",
+	"wheelos-msgs>=0.1.5",
 ]
 
 [project.scripts]

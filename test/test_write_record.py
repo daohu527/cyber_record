@@ -20,9 +20,8 @@ import os
 
 from PIL import Image
 
-from modules.common_msgs.map_msgs import map_pb2
+from wheelos_msgs.map_msgs import map_pb2
 from cyber_record.record import Record
-from record_msg.builder import ImageBuilder, PointCloudBuilder
 
 
 BASE_DIR = os.path.dirname(__file__)
@@ -58,6 +57,8 @@ def read_write_message():
 
 
 def write_image():
+    from cyber_record.message_tools import ImageBuilder
+
     img_path = os.path.join(ASSETS_DIR, "test.jpg")
     if not os.path.exists(img_path):
         return
@@ -70,6 +71,8 @@ def write_image():
 
 
 def write_point_cloud():
+    from cyber_record.message_tools import PointCloudBuilder
+
     point_cloud_builder = PointCloudBuilder()
     write_file_name = os.path.join(ASSETS_DIR, "example_w.record.00003")
     with Record(write_file_name, mode='w') as record:

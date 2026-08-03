@@ -21,9 +21,9 @@ jobs:
         run: |
           python -m pip install -U pip
           pip install -e .[dev,mcap]
-      - name: Run conversion and robustness tests
+      - name: Run conversion, robustness, and message-package tests
         env:
           PYTHONPATH: .
           PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION: python
         run: |
-          pytest -q test/test_converter.py test/test_reader_robustness.py
+          pytest -q test/test_converter.py test/test_reader_robustness.py test/test_wheelos_msgs.py

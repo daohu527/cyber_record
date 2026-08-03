@@ -24,7 +24,29 @@ If you need `record <-> mcap` conversion, install optional dependency:
 pip3 install mcap
 ```
 
-> Since the high-level protobuf version needs to regenerate the proto_pb file, we limit protobuf version to 3.19.4
+> The generated protobuf modules require protobuf 5.29.x.
+
+## Package roles
+
+`cyber_record` is the core package. It reads and writes record containers,
+handles BZ2/LZ4 chunk compression, and deserializes protobuf payloads. It does
+not require `wheelos_msgs`, OpenCV, or the optional message tools.
+
+| Package | Role | Installation |
+|---------|------|--------------|
+| `cyber_record` | Record container, indexing, compression, and protobuf payload handling | `pip install cyber_record` |
+| `wheelos_msgs` | Optional Apollo/WheelOS protobuf message definitions | `pip install cyber_record[msgs]` |
+| `cyber_record[msg-tools]` | Optional image, point-cloud, and CSV conversion/builders; uses Pillow, not OpenCV | `pip install cyber_record[msg-tools]` |
+
+Install both optional layers when converting typed WheelOS image or point-cloud
+messages:
+
+```sh
+pip install cyber_record[msgs,msg-tools]
+```
+
+The message tools can also accept a caller-provided protobuf message class, so
+`wheelos_msgs` is not required for custom message definitions.
 
 
 
@@ -113,7 +135,25 @@ pip install -U pip
 pip install -e .[dev,mcap]
 ```
 
-The `[dev]` extras install includes tools such as `build`, `setuptools`, `wheel`, and `pytest`.
+The `[dev]` extras install includes tools such as `build`, `setuptools`, `wheel`, `pytest`, `Pillow`, `python-lzf`, and `wheelos-msgs`.
+
+To install only the Apollo message definitions needed for writing typed messages:
+
+```bash
+pip install -e .[msgs]
+```
+
+This installs [`wheelos-msgs`](https://pypi.org/project/wheelos-msgs/), which can also be installed directly:
+
+```bash
+pip install wheelos-msgs
+```
+
+To install the optional image, point-cloud, and CSV helpers without OpenCV:
+
+```bash
+pip install -e .[msg-tools]
+```
 
 3. Run tests:
 
@@ -210,12 +250,19 @@ for topic, message, t in record.read_messages_section_scan():
 
 
 ## 2. Parse messages
-To avoid introducing too many dependencies, you can save messages by `record_msg`.
+To avoid introducing too many dependencies, install `wheelos-msgs` for Apollo message definitions:
 ```
-pip3 install record_msg -U
+pip install wheelos-msgs
 ```
 
-`record_msg` provides 3 types of interfaces
+For image, point-cloud, and CSV helper interfaces, install the optional
+message-tools extra:
+
+```
+pip install cyber_record[msg-tools]
+```
+
+The optional tools use Pillow for images and do not depend on OpenCV.
 
 #### csv format
 you can use `to_csv` to format objects so that they can be easily saved in csv format.

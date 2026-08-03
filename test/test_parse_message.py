@@ -19,7 +19,7 @@ import csv
 import os
 
 from cyber_record.record import Record
-from record_msg.parser import to_csv, ImageParser, PointCloudParser
+from cyber_record.message_tools import to_csv, ImageParser, PointCloudParser
 
 
 def parse_pose(pose, writer):

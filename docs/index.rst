@@ -30,6 +30,32 @@ First install "cyber_record" by the following command.
    pip3 install cyber_record -U
 
 
+Package roles
+========================================
+``cyber_record`` is the core record container library. It handles record
+indexes, BZ2/LZ4 chunk compression, and protobuf payloads.
+
+``wheelos_msgs`` is an optional package containing Apollo/WheelOS protobuf
+message definitions:
+
+.. code-block:: sh
+
+   pip3 install cyber_record[msgs]
+
+The optional ``msg-tools`` extra provides image, point-cloud, and CSV
+conversion/builders. It uses Pillow instead of OpenCV:
+
+.. code-block:: sh
+
+   pip3 install cyber_record[msg-tools]
+
+Install both optional layers for typed WheelOS image or point-cloud messages:
+
+.. code-block:: sh
+
+   pip3 install cyber_record[msgs,msg-tools]
+
+
 Command line mode
 ========================================
 You can easily get the information in the record file by the following command.
@@ -166,15 +192,16 @@ If index-based reading fails, you can use section-scan mode.
 
 Parse messages
 ----------------------------
-To avoid introducing too many dependencies, you can save messages by `record_msg`.
+For optional image, point-cloud, and CSV conversion helpers, install the
+message-tools extra.
 
 .. code-block:: sh
    :linenos:
 
-   pip3 install record_msg -U
+   pip3 install cyber_record[msg-tools]
 
 
-`record_msg` provides 3 types of interfaces
+The message tools use Pillow for image conversion and do not depend on OpenCV.
 
 csv format
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
