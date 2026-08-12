@@ -1,354 +1,365 @@
 # cyber_record
 
-[![Documentation Status](https://readthedocs.org/projects/cyber-record/badge/?version=latest)](https://cyber-record.readthedocs.io/en/latest/?badge=latest)
+## Overview
 
-**[cyber_record](https://cyber-record.readthedocs.io/en/latest/)** is a cyber record file offline parse tool. You can use `cyber_record` to read messages from record file, or write messages to the record file.
+`cyber_record` is a pure-Python offline tool for Apollo/Cyber record files.
+It is a file-level reader, writer, recovery tool, and format converter; it
+does not start a Cyber runtime or provide online vehicle control.
 
-| os      | support                 | remark |
-|---------|-------------------------|--------|
-| ubuntu  | :heavy_check_mark:      |        |
-| mac     | :heavy_check_mark:      |        |
-| windows | :heavy_check_mark:      |        |
+Implemented capabilities:
 
+- Read indexed record files and return `(topic, protobuf_message, timestamp_ns)`.
+- Filter reads by topic and inclusive nanosecond start/end time.
+- Fall back to section scanning when an index is broken or unavailable.
+- Inspect record version, size, time range, message count, and channel cache.
+- Write protobuf messages or serialized payloads to new record files.
+- Open records for reading, writing, and index modification/recovery.
+- Expose record compression and chunk/segment header settings in the record
+  header.
+- Recover a channel index from a protobuf `FileDescriptorSet`.
+- Convert `record -> record`, `record -> mcap`, and `mcap -> record`.
+- Detect an input format by MCAP magic bytes when `--from-format auto` is used.
+- Optionally convert protobuf image and point-cloud messages to/from files and
+  flatten protobuf values for CSV output.
 
-## Quick start
-First install "cyber_record" by the following command.
+The core package requires Python `>=3.8` and
+`protobuf>=5.29.0,<6`. MCAP, WheelOS message definitions, and message tools
+are optional.
+
+## Role in WheelOS
+
+`cyber_record` is an offline developer/data tool in WheelOS. It sits beside
+runtime data producers and consumers and provides post-processing for recorded
+protobuf sensor data. It is not a Runtime, Perception, Control, Hardware, or
+Calibration component.
+
+```text
+WheelOS
+ |
+ +--- Tools
+      |
+      +--- cyber_record
+```
+
+## Architecture
+
+```text
+record file
+    |
+    +--> Reader
+    |      +--> index-based read
+    |      +--> section-scan read (broken-index fallback)
+    |      +--> channel descriptors -> dynamic protobuf messages
+    |
+    +--> Writer
+           +--> protobuf message serialization
+           +--> raw payload writing with explicit type/descriptor
+           +--> record header, chunks, and index
+
+Record API
+    +--> Python application
+    +--> message_tools (optional: image / PCD / CSV)
+    +--> converter (optional mcap package)
+                +--> record
+                +--> MCAP
+```
+
+Relevant implementation modules:
+
+| Module | Responsibility |
+| --- | --- |
+| `record.py` | `Record` public read/write API and record lifecycle |
+| `reader.py` | Indexed reads, section scans, channel metadata, protobuf decoding |
+| `writer.py` | Headers, channels, chunks, indexes, protobuf/raw payload writes |
+| `message_tools.py` | Optional image, point-cloud, and CSV helpers |
+| `converter.py` | Record-to-record and cross-format conversion dispatch |
+| `mcap_adapter.py` | MCAP reader/writer adapters |
+| `main.py` | `cyber_record` command-line entry point |
+
+## Installation
+
+Install the core package:
+
 ```sh
-pip3 install cyber_record
-// or update version
-pip3 install cyber_record -U
+python3 -m pip install cyber_record
 ```
 
-If you need `record <-> mcap` conversion, install optional dependency:
-```sh
-pip3 install mcap
-```
-
-> The generated protobuf modules require protobuf 5.29.x.
-
-## Package roles
-
-`cyber_record` is the core package. It reads and writes record containers,
-handles BZ2/LZ4 chunk compression, and deserializes protobuf payloads. It does
-not require `wheelos_msgs`, OpenCV, or the optional message tools.
-
-| Package | Role | Installation |
-|---------|------|--------------|
-| `cyber_record` | Record container, indexing, compression, and protobuf payload handling | `pip install cyber_record` |
-| `wheelos_msgs` | Optional Apollo/WheelOS protobuf message definitions | `pip install cyber_record[msgs]` |
-| `cyber_record[msg-tools]` | Optional image, point-cloud, and CSV conversion/builders; uses Pillow, not OpenCV | `pip install cyber_record[msg-tools]` |
-
-Install both optional layers when converting typed WheelOS image or point-cloud
-messages:
+Install from a checkout for development:
 
 ```sh
-pip install cyber_record[msgs,msg-tools]
-```
-
-The message tools can also accept a caller-provided protobuf message class, so
-`wheelos_msgs` is not required for custom message definitions.
-
-
-
-#### Demo record
-You can download a apollo demo record from [demo_sensor_data_for_vision](https://apollo-system.cdn.bcebos.com/dataset/6.0_edu/demo_sensor_data_for_vision.tar.xz)
-
-## Command line mode
-You can easily get the information in the record file by the following command.
-
-#### Info
-`cyber_record info` will output the statistics of the record file.
-
-```shell
-$ cyber_record info -f example.record.00000
-
-record_file: example.record.00000
-version:     1.0
-begin_time:  2021-07-23 17:12:15.114944
-end_time:    2021-07-23 17:12:15.253911
-duration:    0.14 s
-size:        477.55 KByte
-message_number: 34
-channel_number: 8
-
-/apollo/planning                      , apollo.planning.ADCTrajectory         , 1
-/apollo/routing_request               , apollo.routing.RoutingRequest         , 0
-/apollo/monitor                       , apollo.common.monitor.MonitorMessage  , 0
-/apollo/routing_response              , apollo.routing.RoutingResponse        , 0
-/apollo/routing_response_history      , apollo.routing.RoutingResponse        , 1
-/apollo/localization/pose             , apollo.localization.LocalizationEstimate, 15
-/apollo/canbus/chassis                , apollo.canbus.Chassis                 , 15
-/apollo/prediction                    , apollo.prediction.PredictionObstacles , 2
-```
-
-#### Echo
-`cyber_record echo` will print the message of the specified topic to the terminal.
-
-```shell
-$ cyber_record echo -f example.record.00000 -t /apollo/canbus/chassis
-
-engine_started: true
-speed_mps: 0.0
-throttle_percentage: 0.0
-brake_percentage: 0.0
-driving_mode: COMPLETE_AUTO_DRIVE
-gear_location: GEAR_DRIVE
-header {
-  timestamp_sec: 1627031535.112813
-  module_name: "SimControl"
-  sequence_num: 76636
-}
-```
-
-#### Convert
-`cyber_record convert` converts between supported formats (`record -> record`, `record -> mcap`, `mcap -> record`).
-
-```shell
-cyber_record convert -f input.record -o output.record --from-format record --to-format record
-cyber_record convert -f input.record -o output.mcap --from-format record --to-format mcap
-cyber_record convert -f input.mcap -o output.record --from-format auto --to-format record
-cyber_record convert -f input.mcap -o output.record --from-format mcap --to-format record
-cyber_record convert -f broken.record -o output.mcap --from-format record --to-format mcap --allow-unindexed
-cyber_record convert -f input.record -o window.mcap --from-format record --to-format mcap \
-  --topic /apollo/canbus/chassis --start-time 1627031535164278940 --end-time 1627031535215164773
-```
-
-> `record <-> mcap` conversion requires `mcap` package: `pip install mcap`.
-
-When conversion fails, CLI exits with non-zero code.
-
-## Testing
-
-Recommended steps to run tests locally:
-
-1. Create and activate a virtual environment:
-
-```bash
 python3 -m venv .venv
 source .venv/bin/activate
+python3 -m pip install -U pip
+python3 -m pip install -e ".[dev,mcap]"
 ```
 
-2. Update pip and install development dependencies from the project extras:
+Optional extras declared by `pyproject.toml`:
 
-```bash
-pip install -U pip
-pip install -e .[dev,mcap]
+| Extra | Provides | Install |
+| --- | --- | --- |
+| `msgs` | `wheelos-msgs>=0.1.5`, default Apollo/WheelOS protobuf classes | `python3 -m pip install "cyber_record[msgs]"` |
+| `msg-tools` | `numpy`, Pillow, and `python-lzf` for image/PCD/CSV helpers | `python3 -m pip install "cyber_record[msg-tools]"` |
+| `mcap` | MCAP conversion dependency | `python3 -m pip install "cyber_record[mcap]"` |
+| `dev` | Build, test, message, and helper dependencies used by the repository | `python3 -m pip install "cyber_record[dev]"` |
+
+For typed WheelOS image or point-cloud messages, install both `msgs` and
+`msg-tools`:
+
+```sh
+python3 -m pip install "cyber_record[msgs,msg-tools]"
 ```
 
-The `[dev]` extras install includes tools such as `build`, `setuptools`, `wheel`, `pytest`, `Pillow`, `python-lzf`, and `wheelos-msgs`.
+### Dependency boundary and release scope
 
-To install only the Apollo message definitions needed for writing typed messages:
+The core wheel has exactly one runtime dependency: `protobuf>=5.29.0,<6`.
+It does not require or import `wheelos_msgs`, `record_msgs`, `mcap`, Pillow,
+NumPy, or `python-lzf` during core record reads and writes. `wheelos_msgs` is
+needed only when using the default WheelOS protobuf classes or the `msgs`
+extra. A caller can provide custom protobuf message classes to the message
+builders.
 
-```bash
-pip install -e .[msgs]
+**Release conclusion:** the core offline record reader/writer and CLI are
+publishable as the current package version. MCAP conversion and message
+helpers are publishable as opt-in extras. This is not a claim that every
+placeholder or unfinished path is production-ready: append mode is not
+initialized, record compression values are currently stored in headers but
+chunk bodies are not compressed, and `Query`/`Viewer` are placeholders.
+
+## CLI
+
+The package installs the `cyber_record` entry point:
+
+```text
+cyber_record <command> [options]
 ```
 
-This installs [`wheelos-msgs`](https://pypi.org/project/wheelos-msgs/), which can also be installed directly:
+### `info`
 
-```bash
-pip install wheelos-msgs
+Print record metadata and per-channel statistics:
+
+```sh
+cyber_record info -f test/assets/example.record.00000
 ```
 
-To install the optional image, point-cloud, and CSV helpers without OpenCV:
+### `echo`
 
-```bash
-pip install -e .[msg-tools]
+Print decoded messages for one topic:
+
+```sh
+cyber_record echo -f test/assets/example.record.00000 \
+  -t /apollo/canbus/chassis
 ```
 
-3. Run tests:
+### `convert`
 
-```bash
+Supported source formats are `auto`, `record`, and `mcap`; supported targets
+are `record` and `mcap`. `--topic`, `--start-time`, and `--end-time` filter the
+converted messages. Timestamps are nanoseconds. `--allow-unindexed` uses the
+record section-scan path:
+
+```sh
+cyber_record convert -f input.record -o output.record \
+  --from-format record --to-format record
+cyber_record convert -f input.record -o output.mcap \
+  --from-format record --to-format mcap
+cyber_record convert -f input.mcap -o output.record \
+  --from-format auto --to-format record
+cyber_record convert -f broken.record -o output.mcap \
+  --from-format record --to-format mcap --allow-unindexed
+cyber_record convert -f input.record -o window.mcap \
+  --from-format record --to-format mcap \
+  --topic /apollo/canbus/chassis \
+  --start-time 1627031535164278940 \
+  --end-time 1627031535215164773
+```
+
+MCAP conversion requires the `mcap` extra. Conversion errors return a
+non-zero exit status.
+
+### `recover`
+
+Recover a record channel index using a protobuf descriptor set. The descriptor
+set must contain the target message definition and its dependencies. Generate
+one with `protoc` from an Apollo source tree, then pass its file, topic, and
+message type:
+
+```sh
+protoc --include_imports \
+  --descriptor_set_out=tmp \
+  modules/drivers/proto/sensor_image.proto
+
+cyber_record recover \
+  -f broken.record \
+  -t /apollo/sensor/camera/front_6mm/image \
+  -d tmp \
+  -m apollo.drivers.Image
+```
+
+Back up the record before recovery. The `-t`, `-m`, and `-d` options map to
+the CLI arguments implemented in `main.py`; a topic or message type is
+required.
+
+## Python API
+
+### Reading
+
+```python
+from cyber_record.record import Record
+
+with Record("test/assets/example.record.00000") as record:
+    print(record.version)
+    print(record.size)
+    print(record.get_message_count())
+    print(record.get_channel_cache())
+    print(record.get_start_time(), record.get_end_time())
+
+    for topic, message, timestamp_ns in record.read_messages():
+        print(topic, type(message), timestamp_ns)
+```
+
+`Record.read_messages(topics=None, start_time=None, end_time=None)` accepts a
+topic string or topic collection and nanosecond time bounds. For damaged index
+files, use the equivalent `read_messages_section_scan(...)` method:
+
+```python
+with Record("broken.record", allow_unindexed=True) as record:
+    for topic, message, timestamp_ns in record.read_messages_section_scan():
+        print(topic, message, timestamp_ns)
+```
+
+`read_messages_fallback(...)` exists as a deprecated alias for
+`read_messages_section_scan(...)`.
+
+### Writing
+
+`Record` accepts a path or file object. The constructor recognizes `r` (read),
+`w` (truncate/create and write), `a` (append), and `m` (modify/recovery).
+Messages should be written in chronological order. Append initialization is
+currently empty in `record.py`, so `a` is not a supported workflow.
+
+```python
+import time
+
+from cyber_record.record import Record
+from wheelos_msgs.map_msgs import map_pb2
+
+message = map_pb2.Map()
+message.header.version = b"hello"
+
+with Record("example.record.00000", mode="w") as record:
+    record.write("/apollo/map", message, int(time.time() * 1e9))
+```
+
+For an already serialized protobuf payload, use
+`write_raw(topic, raw_msg, message_type, proto_desc, t=None)` with the
+message type and serialized descriptor bytes:
+
+```python
+with Record("raw.record.00000", mode="w") as record:
+    record.write_raw(
+        "/example/topic",
+        raw_msg=serialized_payload,
+        message_type="example.Message",
+        proto_desc=serialized_file_descriptor,
+        t=1,
+    )
+```
+
+The `Record` constructor accepts `compression=Compression.NONE`,
+`Compression.BZ2`, or `Compression.LZ4`, and `chunk_threshold`. These values
+are stored in the record header; the current writer does not compress chunk
+bodies. The `options` dictionary can provide `compression` and
+`chunk_threshold`. `set_write_header_options(...)` overrides chunk/segment
+intervals and raw sizes before the first write flush.
+
+### Conversion API
+
+The conversion functions are available without the CLI:
+
+```python
+from cyber_record.converter import convert_file
+
+result = convert_file(
+    input_file="input.record",
+    output_file="output.mcap",
+    from_format="record",
+    to_format="mcap",
+    topics="/apollo/canbus/chassis",
+)
+print(result)
+```
+
+For record inputs, `convert_file` supports the same format directions,
+topic/time filters, and `allow_unindexed` behavior as the CLI. The lower-level
+`convert_record_to_record`, `record_to_mcap`, and `mcap_to_record` functions
+are also implemented.
+
+## Optional message tools
+
+Install `msg-tools` for `cyber_record.message_tools`:
+
+- `to_csv(value)` flattens scalar values, sequences, protobuf messages, and
+  iterables into a list suitable for `csv.writer`.
+- `ImageBuilder` builds a protobuf image from an input image using `rgb8`,
+  `bgr8`, `gray`, or `y` encoding.
+- `ImageParser` writes protobuf images as files (JPEG by default) and supports
+  those same encodings. It uses Pillow and does not require OpenCV.
+- `PointCloudBuilder` reads ASCII, binary, or `binary_compressed` PCD files.
+  The PCD must contain `x`, `y`, `z`, and `intensity` fields; compressed PCD
+  input additionally requires `python-lzf`.
+- `PointCloudParser` writes protobuf point clouds as ASCII PCD files and
+  returns a NumPy structured array. Its output mode is currently ASCII only.
+
+The builders use `wheelos_msgs` message types by default. A caller can pass a
+protobuf `message_type` explicitly instead of installing `wheelos-msgs`.
+
+## Repository examples and development
+
+The repository contains the fixture `test/assets/example.record.00000`,
+`test/assets/test.jpg`, and `test/assets/test.pcd`. It also contains analysis
+examples under `examples/analysis/` and the conversion benchmark:
+
+```sh
+PYTHONPATH=. PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
+python3 scripts/benchmark_conversion.py \
+  -f test/assets/example.record.00000 --repeat 3
+```
+
+Run the repository tests after installing the `dev` extra:
+
+```sh
 pytest -q
 ```
 
-If you prefer not to use the extras, you can install the required dev tools individually, for example:
+### Apollo dataset validation
 
-```bash
-pip install -U build setuptools wheel pytest mcap
-```
+The following local validation was performed against
+`/mnt/synology/apollo/sensor_rgb.record`:
 
-## Benchmark
-Run conversion benchmark (time + peak memory):
-```bash
-PYTHONPATH=. PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python \
-python3 scripts/benchmark_conversion.py -f test/assets/example.record.00000 --repeat 3
-```
+| Data | Result |
+| --- | --- |
+| `/apollo/sensor/camera/front_6mm/image` | Read dynamically as `apollo.drivers.Image`; `rgb8`, 1920x1080 |
+| `/apollo/sensor/velodyne64/compensator/PointCloud2` | Read dynamically as `apollo.drivers.PointCloud`; 101,101 points |
+| `ImageParser` | Wrote 3 JPEG samples successfully |
+| `PointCloudParser` | Wrote 1 ASCII PCD sample successfully |
 
+The extracted samples and `manifest.json` are in
+`/mnt/synology/apollo/cyber_record_validation/`. The source record was not
+modified. `demo_3.5.record` opens successfully but has no image or point-cloud
+channel. `sensor_rgb_mixed_pod.record` currently fails before message
+decoding with `google.protobuf.message.DecodeError` while parsing a channel
+`ProtoDesc`; `allow_unindexed=True` does not bypass this descriptor error.
+Therefore compatibility with that file, and with arbitrary Apollo records, is
+not established by this release.
 
-Or you can reference the `cyber_record` in the python file by
-```python
-from cyber_record.record import Record
-```
+## Documentation
 
-#### Recover
-If you find record file is missing index, you can recover the file by `cyber_record recover`.
+- [Online documentation](https://cyber-record.readthedocs.io/en/latest/)
+- [Documentation source](docs/index.rst)
+- [Record and MCAP comparison](docs/record_vs_mcap.rst)
+- [Implementation plan](docs/implementation_plan.rst)
+- [Project repository](https://github.com/daohu527/cyber_record)
+- [Issue tracker](https://github.com/daohu527/cyber_record/issues)
 
-**It is best to backup the file before recover!!!**
-
-1. Generate the file descriptor set. Must be executed in the `apollo` directory.
- - `descriptor_set_out` is the descriptor file name
- - `modules/drivers/proto/sensor_image.proto` the message define proto file
-```
-protoc --include_imports --descriptor_set_out=tmp modules/drivers/proto/sensor_image.proto
-```
-
-or you can use absolute path.
- - `descriptor_set_out` is the descriptor file name
- - `proto_path` the apollo home path
- - `/home/zero/01opencode/apollo/modules/drivers/proto/sensor_image.proto` proto file absolute path
-```
-protoc --include_imports --descriptor_set_out=tmp --proto_path=/home/zero/01opencode/apollo /home/zero/01opencode/apollo/modules/drivers/proto/sensor_image.proto
-```
-
-2. Recover the record file.
- - `broken.record` is the file need repair
- - `/apollo/sensor/camera/front_6mm/image` the topic of the need repair message
- - `tmp` the descriptor file generated in the previous step
- - `apollo.drivers.Image` the message type of the need repair message
-```
-cyber_record recover -f broken.record -t /apollo/sensor/camera/front_6mm/image -d tmp -m apollo.drivers.Image
-```
-
-## Examples
-Below are some examples to help you read and write messages from record files.
-
-## 1. Read messages
-You can read messages directly from the record file in the following ways. If you need to speed up reading, you can use the **Filter Read** below.
-```python
-from cyber_record.record import Record
-
-file_name = "20210521122747.record.00000"
-record = Record(file_name)
-for topic, message, t in record.read_messages():
-  print("{}, {}, {}".format(topic, type(message), t))
-```
-
-The following is the output log of the program
-```
-/apollo/localization/pose, <class 'LocalizationEstimate'>, 1627031535246897752
-/apollo/canbus/chassis, <class 'Chassis'>, 1627031535246913234
-/apollo/canbus/chassis, <class 'Chassis'>, 1627031535253680838
-```
-
-#### Filter Read
-You can also read messages filtered by topics and time. This will improve the speed of parsing messages.
-```python
-def read_filter_by_both():
-  record = Record(file_name)
-  for topic, message, t in record.read_messages('/apollo/canbus/chassis', \
-      start_time=1627031535164278940, end_time=1627031535215164773):
-    print("{}, {}, {}".format(topic, type(message), t))
-```
-
-#### Section Scan Read (for broken index)
-If index-based reading fails, use section-scan mode:
-```python
-record = Record(file_name, allow_unindexed=True)
-for topic, message, t in record.read_messages_section_scan():
-  print("{}, {}, {}".format(topic, type(message), t))
-```
-
-
-## 2. Parse messages
-To avoid introducing too many dependencies, install `wheelos-msgs` for Apollo message definitions:
-```
-pip install wheelos-msgs
-```
-
-For image, point-cloud, and CSV helper interfaces, install the optional
-message-tools extra:
-
-```
-pip install cyber_record[msg-tools]
-```
-
-The optional tools use Pillow for images and do not depend on OpenCV.
-
-#### csv format
-you can use `to_csv` to format objects so that they can be easily saved in csv format.
-```python
-f = open("message.csv", 'w')
-writer = csv.writer(f)
-
-def parse_pose(pose):
-  '''
-  save pose to csv file
-  '''
-  line = to_csv([pose.header.timestamp_sec, pose.pose])
-  writer.writerow(line)
-
-f.close()
-```
-
-#### image
-you can use `ImageParser` to parse and save images.
-```python
-image_parser = ImageParser(output_path='../test')
-for topic, message, t in record.read_messages():
-  if topic == "/apollo/sensor/camera/front_6mm/image":
-    image_parser.parse(message)
-    # or use timestamp as image file name
-    # image_parser.parse(image, t)
-```
-
-#### lidar
-you can use `PointCloudParser` to parse and save pointclouds.
-```python
-pointcloud_parser = PointCloudParser('../test')
-for topic, message, t in record.read_messages():
-  if topic == "/apollo/sensor/lidar32/compensator/PointCloud2":
-    pointcloud_parser.parse(message)
-    # other modes, default is 'ascii'
-    # pointcloud_parser.parse(message, mode='binary')
-    # pointcloud_parser.parse(message, mode='binary_compressed')
-```
-
-
-## 3. Write messages
-You can now also build record by messages. You can write pb_message by `record.write`.
-```python
-def write_message():
-  pb_map = map_pb2.Map()
-  pb_map.header.version = 'hello'.encode()
-
-  with Record(write_file_name, mode='w') as record:
-    record.write('/apollo/map', pb_map, int(time.time() * 1e9))
-```
-
-Its application scenario is to convert dataset into record files. Please note that it must be written in chronological order.
-
-
-If you want to write raw message, you should first use `Builder` to help convert raw data to pb_message.
-
-#### image
-You can write image to record file like below. `ImageBuilder` will help you convert image to pb_image. `encoding` should be `rgb8`,`bgr8` or `gray`, `y`.
-```python
-def write_image():
-  image_builder = ImageBuilder()
-  write_file_name = "example_w.record.00002"
-  with Record(write_file_name, mode='w') as record:
-    img_path = 'test.jpg'
-    pb_image = image_builder.build(img_path, encoding='rgb8')
-    record.write('/apollo/sensor/camera/front_6mm/image',
-                 pb_image,
-                 int(time.time() * 1e9))
-```
-
-#### lidar
-You can write image to record file like below. `PointCloudBuilder` will help you convert pcd file to pb_point_cloud.
-```python
-def write_point_cloud():
-  point_cloud_builder = PointCloudBuilder()
-  write_file_name = "example_w.record.00003"
-  with Record(write_file_name, mode='w') as record:
-    pcd_path = 'test.pcd'
-    pb_point_cloud = point_cloud_builder.build(pcd_path)
-    record.write('/apollo/sensor/lidar32/compensator/PointCloud2',
-                 pb_point_cloud,
-                 int(time.time() * 1e9))
-```
-
-## Future plan
-1. Preserve additional metadata coverage in `record <-> mcap` conversion.
-2. Add unified backend reader abstraction with automatic format routing.
-3. Extend benchmark and CI matrix with larger real-world datasets.
+The `Query` and `Viewer` modules currently contain placeholder classes and are
+not documented as user-facing features.

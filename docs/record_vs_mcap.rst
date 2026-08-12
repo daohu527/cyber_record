@@ -37,31 +37,47 @@ MCAP explicitly separates write path and summary/index path, enabling efficient 
 Detailed comparison
 -------------------
 
-+------------------------------+-------------------------------------------------------------+-------------------------------------------------------------------+
-| Dimension                    | Apollo record (current)                                     | MCAP                                                              |
-+==============================+=============================================================+===================================================================+
-| Container framing            | Section type + section size + protobuf payload             | Opcode + uint64 length + binary payload records                   |
-+------------------------------+-------------------------------------------------------------+-------------------------------------------------------------------+
-| Self-describing schemas      | ``Channel.proto_desc`` embeds protobuf descriptor bytes    | First-class Schema + Channel records, supports multiple encodings |
-+------------------------------+-------------------------------------------------------------+-------------------------------------------------------------------+
-| Message model                | ``SingleMessage(channel_name, time, content)``             | ``Message(channel_id, sequence, log_time, publish_time, data)``   |
-+------------------------------+-------------------------------------------------------------+-------------------------------------------------------------------+
-| Indexing model               | Single Index section with chunk/channel caches             | ChunkIndex + MessageIndex + SummaryOffset (multi-level)           |
-+------------------------------+-------------------------------------------------------------+-------------------------------------------------------------------+
-| Random access                | Good when index is valid; fragile when index is broken     | Strong: Footer-driven summary lookup and per-chunk/per-channel idx|
-+------------------------------+-------------------------------------------------------------+-------------------------------------------------------------------+
-| Corruption tolerance         | Section scan fallback can recover many broken-index files  | Designed for append/recovery; DataEnd/Footer/CRC improve recovery |
-+------------------------------+-------------------------------------------------------------+-------------------------------------------------------------------+
-| Integrity checks             | Limited explicit checks in format                           | CRC fields on key records/sections (optional but standardized)    |
-+------------------------------+-------------------------------------------------------------+-------------------------------------------------------------------+
-| Compression                  | Usually configured by implementation (none/bz2/lz4, etc.)  | Standardized chunk-level compression (commonly zstd/lz4)          |
-+------------------------------+-------------------------------------------------------------+-------------------------------------------------------------------+
-| Metadata/attachments         | Mostly custom extensions / embedded messages               | First-class Attachment/Metadata/Statistics records                |
-+------------------------------+-------------------------------------------------------------+-------------------------------------------------------------------+
-| Ecosystem/tooling            | Apollo-centric / custom                                    | Broad robotics and cross-language ecosystem support               |
-+------------------------------+-------------------------------------------------------------+-------------------------------------------------------------------+
-| Forward extensibility        | Extend protobufs, but less standardized cross-tools        | Explicit opcode/registry evolution path                           |
-+------------------------------+-------------------------------------------------------------+-------------------------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 40 40
+
+   * - Dimension
+     - Apollo record (current)
+     - MCAP
+   * - Container framing
+     - Section type + section size + protobuf payload
+     - Opcode + uint64 length + binary payload records
+   * - Self-describing schemas
+     - ``Channel.proto_desc`` embeds protobuf descriptor bytes
+     - First-class Schema + Channel records, supports multiple encodings
+   * - Message model
+     - ``SingleMessage(channel_name, time, content)``
+     - ``Message(channel_id, sequence, log_time, publish_time, data)``
+   * - Indexing model
+     - Single Index section with chunk/channel caches
+     - ChunkIndex + MessageIndex + SummaryOffset (multi-level)
+   * - Random access
+     - Good when index is valid; fragile when index is broken
+     - Strong: Footer-driven summary lookup and per-chunk/per-channel index
+   * - Corruption tolerance
+     - Section scan fallback can recover many broken-index files
+     - Designed for append/recovery; DataEnd/Footer/CRC improve recovery
+   * - Integrity checks
+     - Limited explicit checks in format
+     - CRC fields on key records/sections (optional but standardized)
+   * - Compression
+     - Compression values are stored in the header; current writer does not
+       compress chunk bodies
+     - Standardized chunk-level compression (commonly zstd/lz4)
+   * - Metadata/attachments
+     - Mostly custom extensions / embedded messages
+     - First-class Attachment/Metadata/Statistics records
+   * - Ecosystem/tooling
+     - Apollo-centric / custom
+     - Broad robotics and cross-language ecosystem support
+   * - Forward extensibility
+     - Extend protobufs, but less standardized cross-tools
+     - Explicit opcode/registry evolution path
 
 What this means for this repository
 -----------------------------------
